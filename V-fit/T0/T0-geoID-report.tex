@@ -1,0 +1,616 @@
+\documentclass[a4paper,12pt]{article}
+
+\input epsf
+\usepackage{hyperref}
+\def\href#1#2{\special{html:<a href="#1">}{#2}\special{html:</a>}}
+
+    \author{Alexander Zvyagin}
+    \title{Time calibration of individual readout cards of STRAW drift chambers}
+    \date{May-July 2006}
+
+\begin{document}
+\maketitle
+
+    \begin{abstract}
+        The procedure and the results of drift start time ($T_0$) calibration
+        of individual STRAW cards are described.
+    \end{abstract}
+
+\tableofcontents
+
+\section{Terminology}
+You are advised to skip this section in a first reading and refer to it later,
+if you need to.
+\subsubsection*{V-plot}
+Set of $m$ points $[\delta_i;\tau_i],\;\;i=1\dots m$; where $\delta$ is drift
+distance (the sortest distance between a track and the sense wire) and $\tau$
+is drift time associated with it.
+\subsubsection*{RT-relation}
+Function which connects drift distance with drift time. A usual
+question which you want to ask from a RT-relation is the following:
+\begin{itemize}
+\item What is a drift distance $\delta$ for a given drift time $\tau$?
+\end{itemize}
+\subsubsection*{$T_0$}
+In the given report $T_0$ is the smallest possible time measurement from a
+channel. All time measurements which are smaller then $T_0$ should be
+considered as a channel noise.
+\subsubsection*{Card}
+Electronic card which is used to read out up to 64 channels of a STRAW
+drift chamber.
+\subsubsection*{DL}
+Double layer - full detector (10mm and 6mm straws, upstream and downstream layers).
+
+\subsubsection*{PH (region)}
+Physical hole (region).
+
+\subsubsection*{CORAL}
+COMPASS reconstruction program.
+
+\section{Description of the problem}
+\label{ch:Problem description}
+The layout of STRAW drift chambers in the 2004 data taking period was the following.
+There were two ST03 submodules (combined in one module) and three submodules
+ST04,ST05,ST06. So in total there were five submodules. Every submodule consists
+of three detectors (or DL): one Y-type and two X-types. To readout a Y-type detector
+11 cards and for a X-type detector 14 cards are needed.
+So in total, to read out all STRAW drift chambers (15 DLs)
+$195 = 5 \times (11 + 2 \times 14)$ cards are needed
+\footnote{In the plots below one can see that the number of cards is less then 195.
+It happens because
+\begin{itemize}
+\item there were some detectors with missing cards;
+\item some cards did not work properly in a give time period.
+\end{itemize}}.
+
+A single card can readout up to a 64
+channels in total. {\bf We assume that all 64 channels of the same card have identical
+$T_0$ values}. Every card has its own cable which connectes it to
+the COMPASS DAQ system. And these cable lengths are not necessarily equal.
+So in principle, every card may have a $T_0$ which differs
+from the others and in total we may have 195 different $T_0$ for all cards.
+The cable lengths were adjusted in such a way, that cards of the same submodule
+had the same $T_0$. This assumption (one $T_0$ for one detector) was used in
+the COMPASS reconstruction program (CORAL). But one can impove the detector
+resolution seen by CORAL by making a card-dependent $T_0$ calibration.
+In the given report the method and results of per-card $T_0$ calibration
+are described.
+
+\section{Procedure of T0 calibration}
+\subsection{RT-relation}
+First of all, RT-relation is determined (this procedure is not described here).
+The RT function is calculated by fitting a V-plot of a reasonable quality
+\footnote{A V-plot for the RT-fit procedure does not need to be perfect. V-legs may be fat
+(due to a bad resolution), the V-plot background may be big, but as far as the plot
+has enough entries, the RT function determination is not a problem.}.
+The RT used by STRAW drift chambers is given by a table-function,
+see tables (\ref{RT6mm}) and (\ref{RT10mm}). The drift distance $\delta$ for a drift
+time $\tau$ is calculated by linear interpolation between points $[t_i;t_{i+1}]$
+of the table, with $t_i \leq \tau<t_{i+1}$.
+\begin{table}[ht]
+\centering
+\caption{RT for 6-mm straws}
+%\vspace{11pt}
+\label{RT6mm}
+% 0:0 0.033:10.4 0.066:15.2 0.165:27.4 0.264:40.4 0.297:49.3 0.33:58.4
+\begin{tabular}{c|ccccccc} \hline
+Point number $i$                & 1     &   2       &   3       &   4       &   5       &   6       &   7       \\ \hline
+Drift time $\tau$ [ns]         & 0     &   10.4    &   15.2    &   27.4    &   40.4    &   49.3    &   58.4    \\
+Drift distance $\delta$ [cm]   & 0     &   0.033   &   0.066   &   0.165   &   0.264   &   0.297   &   0.33    \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{RT for 10-mm straws}
+%\vspace{11pt}
+\label{RT10mm}
+% 0:0 0.033:10.4 0.066:15.2 0.165:27.4 0.264:40.4 0.297:49.3 0.33:58.4
+\begin{tabular}{c|ccccccc} \hline
+Point number $i$                & 1     &   2       &   3       &   4       &   5       &   6       &   7       \\ \hline
+Drift time $\tau$ [ns]         & 0     &   13.0    &   19.8    &   36.4    &   57.0    &   65.9    &   83.4    \\
+Drift distance $\delta$ [cm]   & 0     &   0.048   &   0.096   &   0.240   &   0.384   &   0.432   &   0.48    \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{V-plots of cards}
+A V-plot is fitted by the fixed RT function presented in the table (\ref{RT6mm}) or (\ref{RT10mm}),
+depending on the straw diameter size.
+The fit gives two numbers $w_0$ and $T_0$ which
+determine origin of the V. Here we are only intrested in the
+variation of $T_0$.
+
+%The value $w_0$ is not intresting for the present
+%study \footnote{It tells us about detector misalignment.}.
+%And $T_0$ is the number which we are intresting in.
+
+A single X- or Y- type detector has an internal structure of an
+{\it upstream} and {\it downstream} layer. A single electronic card
+reads both of them. One half
+of a card (32 channels) reads a part of an upstream layer and another half reads
+a downstream one. For every card the two V-plots are created: one for the
+upstream and another for the  downstream layers. So after a V-plot fit,
+two $T_0$ numbers available:
+$T_0^u$ and $T_0^d$. Because we assume that possible $T_0$ variations
+among cards are due to different cable lengths and every card has a single readout cable,
+these $T_0^u$ and $T_0^d$ values should be identical.
+In reality they are different, because of the statistical fluctuations and
+some systematic effects. Distribution of the difference $T_0^u - T_0^d$
+plotted for all cards gives a very good hint about the method precision
+$\sigma_{T_0}$ of $T_0$ determination
+\footnote{One have to assume that $\sigma_{T_0}$ is the same for all cards.
+In principle this is not correct. The method of $T_0$ calculation is sensetive to
+the number of V-plot entries, but the amount of data comming from different cards
+is very different (by a factor $1\dots10^5$). Apparently this is
+not a problem - the distribution $T_0^u - T_0^d$ has a nice gaussian shape
+(see Figure (\ref{T0u-T0d distr proj})),
+so the hypothesis about stable $\sigma_{T_0}$ works.}.
+The distribution of $T_0^u - T_0^d$ difference plotted
+on all analyzed cards is shown on the Figures (\ref{T0u-T0d distr}) and (\ref{T0u-T0d distr proj}).
+From the $\sigma$ value
+of the gaussian fit one can determinate the precision of $T_0$
+determination:
+$$\sigma_{T_0} = \frac{\sigma_{fit}}{\sqrt{2}}.$$
+It is approximately equal to $\sigma_{T_0} = \frac{0.22 ns}{\sqrt{2}} = 0.16 ns$
+The number of cards covered by the fit is given by the formula
+$\frac{A \sqrt{2\pi} \sigma}{\delta_{bin}}$,
+where $A$ and $\sigma$ are the numbers from the ROOT fit and $\delta_{bin}$ is the bin size
+of the histogram. So with the numbers $A=24$, $\sigma=0.22\;ns$, $\delta_{bin}=0.1\;ns$
+we found that the fit covers $\frac{A \sqrt{2\pi} \sigma}{\delta_{bin}} \approx 132$ cards
+out of 180.
+
+%The table (\ref{T0 card fit problems}) contains a list of cards for which
+%$T_0^u$ and $T_0^d$ did not agree, $|T_0^u - T_0^d|>1\;ns$.
+%A typical V-fit problems are shown on the figures (\ref{fig:fit problem - noise}),
+%(\ref{fig:fit problem - no data}),
+%(\ref{fig:fit problem - bad data}), (\ref{fig:fit problem - fit disagrees}),
+%(\ref{fig:fit problem - fit failed}).
+
+\begin{figure}[ht]
+\centering
+\caption{$T_0^u - T_0^d$ difference for cards}
+\label{T0u-T0d distr}
+\epsfxsize=250pt \epsfbox{T0_dT.eps}
+\end{figure}
+\begin{figure}[hb]
+\centering
+\caption{Distribution of $T_0^u - T_0^d$ for all STRAW cards.
+This is a projection of the Figure (\ref{T0u-T0d distr}) distribution to the time axis.}
+\label{T0u-T0d distr proj}
+\epsfxsize=250pt \epsfbox{T0_dT_proj.eps}
+\end{figure}
+
+\clearpage
+\section{V-plot fitting parameters}
+\subsection{V-fit program parameters description}
+\label{sec:V-fit parameters}
+Here the function used in the fitting procedure is described.
+The C++ code of it is provided in the appendix (\ref{sec:minimization function}).
+
+The fitting code (MINUIT) tried to minimize a function $F$ (described below)
+which depends on the following parameters:
+\begin{itemize}
+\item V-plots data, this is a set of $m$ points $[\delta_i;\tau_i],\;\;i=1\dots m$;
+\item RT;
+\item $w_0$;
+\item $T_0$.
+\end{itemize}
+
+If a V-plot data point has $\tau_i<T_0$ or $\tau_i>T_0+\tau_{max}$ (where $\tau_{max}$ is a
+maximum drift time, obtained from the RT) then this point does not contribute to $F$. If a point
+$(\delta_i;\tau_i)$ is too far from a V-leg, it is ignored (parameter $\delta_{leg}$ below).
+A point will be ignored also if it is in the V-plot central region (parameter $\delta_{center}$ below).
+This has been done because the central region of a V-plot is badly described by RT.
+
+All accepted points $m^\prime$ $(\delta_i;\tau_i)$ are added to the $F$ function:
+\footnote{This is a principle formula. The real code is a little bit more complex, because
+a possible detector misalgnment should be taken into account, see section (\ref{sec:minimization function}).}
+
+$$
+    F = \sum_{i=1}^{m^\prime}{(\delta_i-\delta_i^{RT}(\tau_i))^2}
+$$
+
+where $\delta_i^{RT}(\tau_i)$ is the predicted drift distance obtained from the
+RT for a given $\tau_i$.
+
+Here is the list of tunable parameters which effect the $F$ function calculation:
+\begin{description}
+\item[$\delta_{leg}$] Maximum distance from a RT-leg to a data point;
+\item[$\delta_{center}$] All central points points of a V-plot with $|\delta_i|<\delta_{center}$
+                         do not contribute to $F$.
+\item[$K_{points}$]   The final $F$ function is multiplied by a factor $1+K_{points}\frac{m-m^\prime}{m+m^\prime}$,
+                      where $m^\prime$ is the number of points which contributed to the function $F$ calculation.
+                      This has been done to encourage the fit procedure to fit as many points of V-plot
+                      as possible. $$ F_{final} = F \times \left(1+K_{points}\frac{m-m^\prime}{m+m^\prime} \right).$$
+\end{description}
+
+\subsection{V-fit program parameters tuning}
+As it was explained earlier, the $T_0^u-T_0^d$ distribution Figure (\ref{T0u-T0d distr proj})
+plotted for many cards
+provides a measure of $T_0$ method precision $\sigma_{T_0}$. One can use this plot to decide
+which set of parameters of the section (\ref{sec:V-fit parameters}) produces the best results.
+To judge about how well fit worked with a set of $(\delta_{leg},\delta_{center},K_{points})$
+parameters one can look to some values of a corresponding $T_0^u-T_0^d$ distribution:
+
+\begin{itemize}
+\item RMS - root mean squre of the distribution in the histogram range;
+\item $\sigma$ from the Gaus fit;
+\item Number of cards described by the Gaus fit (integral of the Gaus distribution).
+\end{itemize}
+
+Results of the such investigation can be found in the Table (\ref{tbl:fit tuning}).
+Sell also the straw logbook entry
+\href{http://na58pc052.cern.ch:8080/straw/151}{http://na58pc052.cern.ch:8080/straw/151}.
+
+\begin{table}[ht]
+\centering
+\caption{Results of V-plot fit with different parameters.
+Sell also the \href{http://na58pc052.cern.ch:8080/straw/151}{straw logbook entry 151}}
+\label{tbl:fit tuning}
+%\vspace{11pt}
+%\label{}
+\begin{tabular}{|c|ccc|lcr|} \hline
+    & \multicolumn{3}{c|}{V-fit parameters}  & \multicolumn{3}{c|}{V-fit results from $T_0^u-T_0^d$ plot} \\
+    & $K_{points}$ & $\delta_{center}$ & $\delta_{leg}$ & RMS & $\sigma$ & Gaus-integral \\ \hline
+a   & 0 & 0     & 0.1   &     1.09 & 0.26 & 114 \\
+b   & 1 & 0     & 0.1   &     0.87 & 0.25 & 113 \\
+c   & 1 & 0.02  & 0.1   &     0.81 & 0.29 & 116 \\
+d   & 3 & 0.02  & 0.1   &     0.82 & 0.39 & 127 \\
+e   & 2 & 0.02  & 0.1   &     0.97 & 0.15 & 102 \\
+f   & 2 & 0.03  & 0.1   &     0.76 & 0.21 & 103 \\
+g   & 2 & 0.04  & 0.1   &     0.71 & 0.26 & 117 \\
+h   & 2 & 0.05  & 0.1   &     0.67 & 0.52 &  98 \\
+i   & 2 & 0.075 & 0.1   &     0.80 & 0.24 & 111 \\
+j   & 2 & 0.05  & 0.075 &     0.90 & 0.27 & 116 \\
+k   & 2 & 0.06  & 0.1   &     0.82 & 0.33 & 119 \\
+l   & 2 & 0.05  & 0.125 &     0.71 & 0.23 & 111 \\
+m   & 3 & 0.05  & 0.1   &     0.67 & 0.52 &  98 \\
+n   & 2 & 0.05  & 0.09  &     0.84 & 0.28 & 111 \\
+o   & 2 & 0.05  & 0.11  &     0.72 & 0.20 & 121 \\
+p   & 1 & 0.05  & 0.1   &     0.67 & 0.40 & 101 \\
+q   & 1 & 0.06  & 0.1   &     0.82 & 0.32 & 112 \\
+r   &10 & 0.05  & 0.1   &     0.67 & 0.41 & 102 \\
+s*  & 0 & 0.05  & 0.1   &     0.66 & 0.29 & 109 \\
+u** & 0 & 0.05  & 0.1   &     0.61 & 0.22 & 132 \\
+\hline
+\end{tabular}
+
+\begin{flushleft}
+\begin{itemize}
+\item s*: Bug related to MINUIT usage was fixed.
+\item u**: Signal propagation time is corrected.
+\end{itemize}
+\end{flushleft}
+\end{table}
+
+It was decided to use the set of parameters $(\delta_{leg},\delta_{center},K_{points})$
+which minimizes histogram RMS value. They are presented in the Table (\ref{tbl:fit parameters}).
+
+\begin{table}[ht]
+\centering
+\caption{Selected fit parameters}
+\label{tbl:fit parameters}
+\begin{tabular}{|c|c|c|} \hline
+$K_{points}$ & $\delta_{center}$ & $\delta_{leg}$ \\
+ 0 & 0.05  & 0.1   \\
+\hline
+\end{tabular}
+\end{table}
+
+\clearpage
+\section{Measured $T_0^u$ and $T_0^d$ for all cards}
+
+%\subsection{How results are presented}
+In this section you will find the results on all calculated $T_0$ values.
+The results are presented in the set of tables and plots. There is one plot and
+one table for every DL.
+
+\subsection{Analyzed data}
+It was analyzed run number 37059 with the CORAL version from June 2005. Corrections
+from X-ray tables were activated, but CORAL clusters were not updated by the X-ray
+corrections (internal CORAL feature). A simplified alignment of STRAW chambers was
+done as well.
+
+\subsection{Plots and tables description}
+On the plots you will find the distribution of
+$T_0^u$ and $T_0^d$ versus card number of a DL.
+On the plots and tables, the cards numbers appear in the following order:
+\begin{itemize}
+\item 10mm cards on the Saleve side (for {\bf XUV} types) or
+from the bottom part (for {\bf Y} type) of a chamber, the ordering
+is Saleve $\rightarrow$ Jura for {\bf XUV} chamber types and
+bottom $\rightarrow$ top for the {\bf Y}-type.
+\item 6mm cards before the PH region, the ordering is Saleve $\rightarrow$ Jura
+      ({\bf XUV}-type) or bottom $\rightarrow$ top ({\bf Y}-type);
+\item Card of the PH region which is located on the same side as other cards;
+\item Card of the PH region which is located alone on another side of the detector;
+\item 6mm cards after the PH region, the ordering is Saleve $\rightarrow$ Jura
+      ({\bf XUV}-type) or bottom $\rightarrow$ top ({\bf Y}-type);
+\item 10mm cards on the Jura side (for {\bf XUV} chamber types) or
+from the top part (for {\bf Y} chamber type) of a chamber, the ordering
+is Saleve $\rightarrow$ Jura for {\bf XUV} chamber types and
+bottom $\rightarrow$ top for the {\bf Y}-type.
+\end{itemize}
+
+One bin of a histogram correspond to one half of a card.
+The bin labels have the follwoing format: $$<straw size>-<layer>-<card ID>$$
+where $<straw size>$ is either $6mm$ or $10mm$, $<layer>$ is 
+{\bf u} for upstream and {\bf d} for downstream layer and $<card ID>$
+is the card identification number
+\footnote{For the {\it card identification number} there is another name:
+{\it card geoghraphical address}. In fact
+this is not an address of a card. This is an address of a motherboard to which
+a card is connected. So if you replace a card in a certain place of a DL to
+a new one, the newly placed card ID will be exactly the same as for the previous card.}.
+A possible prefix PH says that this card is from a DL physical hole region,
+and it is located on a few meters distance away from other non-PH cards.
+There are 22 entries (two times the number of cards)
+for {\bf Y}-type and 28 for the {\bf XUV}-type detectors,
+see Section \ref{ch:Problem description}.
+
+Description of the tables columns:
+\begin{description}
+\item[card] The card name. It is the same as for the plots.
+\item[layer] Upstream (u) or downstream (d) latyer.
+\item[data] Number of points in an appropriate V-plot.
+\item[$T_0$] The value of $T_0$ which was obtained from a V-plot fit.
+\item[$T_0^c$] This is a $T_0$ which will be used in software, {\it calibrated $T_0$}.
+A number given in the brackets $<T_0>$ means that the $T_0^c$ was calculated as
+the average $$T_0^c=\frac{T_0^u+T_0^d}{2}.$$ This is done for all cases when V-fit worked
+on the both layers. If $T_0^c$ value is given without brackets (fit problems or V-plot problems),
+then $T_0^c$ is taken from one of the neighbor cards.
+\item[comment] Fit result comment. The comment {\bf OK} means that I have
+looked at the V-plots and they were fine. And there is no any comment
+if I did not look at the V-plots.
+\end{description}
+
+
+
+\subsection{Results}
+
+Due to a software bug all $T_0$ values of ST06Y1 chamber were not calculated.
+
+\include{cards}
+\include{t0-tables}
+\clearpage
+
+\subsection{Necessity of the per-card $T_0$ calibration.}
+In the {\bf CORAL} COMPASS reconstruction program it is used 6 $T_0$ values for every DL, one
+$T_0^{CORAL}$ for every DL subsection.
+If $T_0^{C_i}$ is a $T_0$ value obtained for a card $i$ in this subsection by the present
+calibration procedure, then
+the difference $T_0^{C_i}-T_0^{CORAL}$ (ploted for all DL subsections)
+will tell us how much one can gain by applying per-card $T_0$ calibration.
+Looking at the plot Figure (\ref{fig:coral_t0_diff}) one can see that the spread of
+$T_0$-values is $\approx 1.3 ns$ which corresponds to $130 \mu m$ and is comparable with
+the chamber resolution.
+
+\begin{figure}[ht]
+\centering
+\caption{Difference of $T_0^C-T_0^{CORAL}$ versus a card number. This plot shows
+per-card $T_0$ difference versus $T_0^{CORAL}$ values. One bin corresponds to
+a single card.}
+\label{fig:coral_t0_diff_det}
+\epsfxsize=233pt \epsfbox{coral_t0_diff_det.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{Per-card $T_0$ fluctuations.
+This is a projection of the plot \ref{fig:coral_t0_diff_det} to the Y-axis.}
+\label{fig:coral_t0_diff}
+\epsfxsize=233pt \epsfbox{coral_t0_diff.eps}
+\end{figure}
+
+\clearpage
+
+\subsection{Problematic cards}
+\subsubsection{Fit problems}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 436 of upstream (left) and downstream (right) ST03V1a layers.
+Fit failed here, probably because of a big misalignment.}
+\label{fig:Vs_ST03V1a_card436}
+\epsfxsize=255pt \epsfbox{Vs_ST03V1a_card436.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 312 of upstream (left) and downstream (right) ST03V1b layers.
+Is that fit OK? We have here $|T_0^u-T_0^d| \approx 1 ns$. }
+\label{fig:Vs_ST03V1b_card312}
+\epsfxsize=255pt \epsfbox{Vs_ST03V1b_card312.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 259 of upstream (left) and downstream (right) ST03Y2b layers.
+Is that fit OK? We have here $|T_0^u-T_0^d| \approx 1.5 ns$. }
+\label{fig:Vs_ST03Y2b_card259}
+\epsfxsize=255pt \epsfbox{Vs_ST03Y2b_card259.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 260 of upstream (left) and downstream (right) ST03Y2b layers.
+Is that fit OK? We have here $|T_0^u-T_0^d| \approx 1.6 ns$. }
+\label{fig:Vs_ST03Y2b_card260}
+\epsfxsize=255pt \epsfbox{Vs_ST03Y2b_card260.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 513 of upstream (left) and downstream (right) ST05Y1b layers.
+Is that fit OK? We have here $|T_0^u-T_0^d| \approx 1 ns$}
+\label{fig:Vs_ST05Y1b_card513}
+\epsfxsize=255pt \epsfbox{Vs_ST05Y1b_card513.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 385 of upstream (left) and downstream (right) ST03Y2 layers.
+There are not enough points for the fit.}
+\label{fig:Vs_ST03Y2a_card385}
+\epsfxsize=255pt \epsfbox{Vs_ST03Y2a_card385.eps}
+\end{figure}
+
+\clearpage
+\subsubsection{Bad V-plots}
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 279 of upstream (left) and downstream (right) ST04V1b layers.
+Fit OK, but background is big.}
+\label{fig:Vs_ST04V1b_card279}
+\epsfxsize=255pt \epsfbox{Vs_ST04V1b_card279.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 452 of upstream (left) and downstream (right) ST04Y1c layers.
+Fit failed due to a big background.}
+\label{fig:Vs_ST04Y1c_card452}
+\epsfxsize=255pt \epsfbox{Vs_ST04Y1c_card452.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 501 of upstream (left) and downstream (right) ST04X1c layers.
+V-plots are barely seen over a big background.}
+\label{fig:Vs_ST04X1c_card501}
+\epsfxsize=255pt \epsfbox{Vs_ST04X1c_card501.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 130 of upstream (left) and downstream (right) ST06Y1c layers.
+There are not enough points for a good fit.}
+\label{fig:Vs_ST06Y1c_card130}
+\epsfxsize=255pt \epsfbox{Vs_ST06Y1c_card130.eps}
+\end{figure}
+
+\clearpage
+\subsubsection{Bad V-plots due to a software bug}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 72 of upstream (left) and downstream (right) ST03Y1b layers.}
+\label{fig:Vs_ST03Y1b_card72}
+\epsfxsize=255pt \epsfbox{Vs_ST03Y1b_card72.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 376 of upstream (left) and downstream (right) ST04X1b layers.}
+\label{fig:Vs_ST04X1b_card376}
+\epsfxsize=255pt \epsfbox{Vs_ST04X1b_card376.eps}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\caption{V-plots from the card 568 of upstream (left) and downstream (right) ST05U1b layers.}
+\label{fig:Vs_ST05U1b_card568}
+\epsfxsize=255pt \epsfbox{Vs_ST05U1b_card568.eps}
+\end{figure}
+
+
+\clearpage
+\section{Conclusions}
+
+The precision of our  method  to determine T0 is
+$<0.2 ns$. With a  drift velocity of $\approx 100\mu m /ns$ it corresponds to $20\mu m$
+spatial resolution. This precision is good enough to study the effects of the $T_0$
+calibration on the overall  spatial resolution.
+%of  240 microm (design goal for one chamber layer).
+The quality of the V-plots varies much from one detector to another. We suspect that this happens
+due to a different quality of tracking at the detector positions.
+There were several cases where the V-fit did not well, but for majority number of cards
+the results are satisfactory.
+
+In the course of the  work described here, several software bugs were discovered.
+ 
+Our main result is the measurement of the fluctuations of $T_0$  for different readout cards,
+see Figure (\ref{fig:coral_t0_diff_det}) and Figure (\ref{fig:coral_t0_diff}).
+They show that $T_0$ varies by up to 3 ns from the mean value  and the CORAL $T_0$ determined
+for one DL subsection, in  some cases  even up to 14 ns. Thus the necessity to obtain an
+individual $T_0$ calibration per card has been demonstrated. At presnt, the contribution to the
+spatial resolution due to the lack of an individual calibration per card is estimated to
+be $130 \mu m$.
+
+\appendix
+
+\clearpage
+\section{MINUIT minimization function}
+\label{sec:minimization function}
+
+This is the real function which was used in MINUIT.
+
+
+\begin{table}[ht]
+\centering
+\caption{Connection of the code variables with the parameters of the section
+section(\ref{sec:V-fit parameters})}
+\begin{tabular}{l|l} \hline
+V-plot                              & \verb@_res_->vdata@               \\ \hline
+$m$                                 & \verb@_res_->vdata.size()@        \\ \hline
+$m^\prime$                          & \verb@n@                          \\ \hline
+$K_{points}$                        & \verb@_res_->V_fit_max_points@    \\ \hline
+$\delta_{leg}$                      & \verb@_res_->V_leg_max_dist@      \\ \hline
+$\delta_{center}$                   & \verb@_res_->V_center_coridor@    \\ \hline
+$\delta$                            & \verb@it->x@                      \\ \hline
+$\tau$                              & \verb@it->t@                      \\ \hline
+$|\delta_i-\delta_i^{RT}(\tau_i)|$  & \verb@d@                          \\ \hline
+\end{tabular}
+\end{table}
+
+{\footnotesize
+\begin{verbatim}
+void f_space(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
+{
+    if( _res_==NULL )
+        throw "There is no fit data!";
+
+    const double w0=x[0], t0=x[1], xe=0.02, b=0;
+    float n=0;
+
+    fr=0;
+    _res_->rt->SetT0(t0);
+
+    for( vector<V::VData>::const_iterator it=_res_->vdata.begin();
+         it!=_res_->vdata.end(); it++ )
+    {
+        if( it->w<=b )
+            continue;   // background!
+        
+        if( fabs(it->x-w0)<_res_->V_center_coridor )
+            continue;
+        
+        try
+        {
+        
+            double d = fabs(_res_->rt->GetR(it->t)-fabs(it->x-w0));
+
+            if( d < _res_->V_leg_max_dist )
+            {
+                fr += pow(d/xe,2)*(it->w-b);
+                n += it->w-b;
+            }
+        }
+        catch(...)
+        {
+        }
+    }
+    
+    fr /= n;
+    
+    if( _res_->V_fit_max_points )
+        fr *= 1 +
+              _res_->V_fit_max_points * fabs (_res_->vdata.size()-n)
+                                      / float(_res_->vdata.size()+n);
+}
+\end{verbatim}
+}
+
+\end{document}
