@@ -1,0 +1,88 @@
+Re: STRAW: ASD8 database
+From: "Krzysztof Zaremba" <K.Zaremba@ire.pw.edu.pl>
+To: "Alexander Zviaguine" <Alexander.Zviagine@cern.ch>
+Date: 8.5.03 14.42
+
+Dear Sasha,
+
+    The data which is crucial for you are in three columns:
+first column - chip number
+second column - channel number 
+third column - Udc in mV
+
+The fourth one consists equivalent noise charge (ENC) which should be
+useless for you so far. It is NOT a Qdc value.
+Two other parameters you asked for (bottom 
+of the first column) are not interested as well.  
+
+I hope this will help you,
+
+Best regards,
+
+Krzysztof & Janusz
+
+
+Alexander Zvyagin wrote:
+
+
+	Dear Krzysztof,
+	
+	I have more questions. It is about the ASD0xxxx.DAT files.
+	
+	  
+
+		        An example file looks as following (Asd01001.dat)
+		
+		1001    1     11.6    1370.6
+		1001    2    -28.6    1363.2
+		1001    3    -191.3    1358.5
+		1001    4    -23.8    1371.4
+		1001    5    136.6    1345.7
+		1001    6    -56.9    1365.2
+		6832    7     11.3    1367.2
+		3403    8    -82.7    1381.1
+		
+		First column:   first six numbers:  chip number,
+		                seventh number: difference between highes and lowest 
+		value of Qdc in electrons
+		               eighth  number: difference between a mean value of Qdc 
+		for a chip  and lowest value (in electrons)
+		
+		Third column:   voltage offset Udc  [mV]
+		
+		Fourth column:  ENC [e]
+		    
+
+	
+	So I take the function mensioned in the COMPASS Note 2000-10, fig.4
+	and it depends on Q and 3 parameters U(Q;U0,k,Qdc).
+	
+	You used 1-point solution (it is mentioned in the 2000-10 COMPASS Note). 
+	And I assume you measure one value per channel (Qdc) plus some 
+	measuremnts per chip (like 6832 and 3403 for Asd01001.dat).
+	
+	From the Note I take (am I right with that?):
+	U0 = 1628 mV
+	k  = 304 mV/fC
+	
+	And from your files I have Qdc (the forth column). At this point I 
+	know the function U(Q) for all channels of ASD8 chips.
+	
+	But now I don't undertsnad the contents of the third column of the DB. It 
+	is mentioned in the note that Udc=-Qdc*k. But this is definitely not true
+	in your files. Even the sign of Udc may change! And why do you have both 
+	Udc and Qdc in the files?
+	
+	What did I miss?
+	
+	Do I need to use
+	- difference between highes and lowest value of Qdc in electrons
+	- difference between a mean value of Qdc for a chip  and lowest value (in electrons)
+	?
+	
+	Thanks in advance,
+	Sasha.
+	
+	  
+
+
