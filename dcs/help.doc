@@ -1,0 +1,90 @@
+////////////////////////////////////////////////////////////////////////////////
+
+/*! \mainpage COMPASS Detector Slow Control Monitoring
+    \author Alexander Zvyagin <Alexander.Zviagine@cern.ch>
+    \section ThePurpose The purpose
+    The COMPASS DCS system works very nice now (2004 year). It provides
+    an easy access to a detector slow control information. But sometimes
+    we need to make a global overview of a detector slow control properties
+    over a certain time period. For example: how many times a detector tripped?
+    Did it hold nominal high voltage in that period of time?
+    The present tool helps to find an answeres to these kind of questions.
+
+    \section MakeReport How to Create a Report
+      - First of all setup your environment:
+        \verbatim
+        $ /afs/cern.ch/compass/detector/straw/bin/cs shell
+        \endverbatim
+      - Now you can create the report:
+        \verbatim
+        $ dcs --t1=20040622 --t2=20040624
+        \endverbatim
+    
+    \section FillDB How to Fill the DB
+     - First of all you have to login on computer \b pccompass04 under account
+       \b compassdcs. You have to know the password for this, ask the DCS group.
+     - After that please run the following command:
+       \verbatim
+       $ /afs/cern.ch/compass/detector/straw/bin/cs shell
+       \endverbatim
+       It will spawn a new shell with correct environment variables.
+     - Now you can extract data from internal DCS database to ordinary text files.
+       \verbatim
+       $ straw_dcs_files
+       \endverbatim
+       A window should be opend on your display.
+       - Select a time period for which you want to extract data. It is OK if
+         your time period overlaps with a previous one (if you run the program
+         more then once). In the MySQL DB you will not have any duplicated entries.
+         - Select \c IMon and press \c Start. A new window will popup.
+         - Press \c Yes and wait for 5..30 minutes for the message \b Status: \c Done.
+         - Then press \c Close on the subwindow.
+         - At this moment you should have extracted all current measurements for
+         your detector from the DB.
+       - Repeat the same exersice with other fields (Vmon,Humidity,...)
+       You can also try to use non-graphical scrip-oriented version of the program:
+       \verbatim
+       $ straw_dcs_files2
+       \endverbatim
+     - Now go the directory with the output files.
+       \verbatim
+       $ cd /dcs/home/data/xls_report
+       $ ls -la
+       \endverbatim
+       You will see all files which should have been produced.
+       Check the files creation time!
+     - The next step is to copy the newly extracted data from the output files to
+       MySQL DB. You can do this with this command:
+       \verbatim
+       $ dcs --db-files=/dcs/home/data/xls_report --db-user=NAME --db-password=COMPASS-PASSWORD
+       \endverbatim
+       Please specify your name for the --user argument and use COMPASS standard password.
+       The program may run for hours, if size of your data is big enough (~1Gb).
+       Don't worry if you see something like:
+       \verbatim
+       **** FAILED: INSERT INTO ..... Error in <TMySQLServer::Query>: Duplicate entry ....
+       \endverbatim
+     - Once the program finished it work, you have successfully updated the DB.
+
+    \section Code Code
+        \subsection SourceCode Source code
+            Source code is controled by \b Subversion version control system in
+            \verbatim
+            /afs/cern.ch/user/z/zvyagin/w0/svn/dcs
+            \endverbatim
+        \subsection Executable Executable
+            \verbatim
+            /afs/cern.ch/compass/detector/straw/bin/dcs
+            \endverbatim
+        \subsection Documentation Documentation
+            \verbatim
+            /afs/cern.ch/compass/detector/straw/doc/dcs
+            \endverbatim
+        
+    \todo Describe how to use \b mysqlcc
+    \todo Add better general support for other detectors.
+    \todo Describe the DB structure!
+    \todo Describe how to access
+*/
+
+////////////////////////////////////////////////////////////////////////////////
