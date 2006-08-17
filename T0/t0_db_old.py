@@ -6,7 +6,9 @@ cdb_dir = '/afs/cern.ch/compass/detector/calibrations/MySQLDB_files3/'
 
 for sel in os.popen('%s --batch --silent -e \"%s\"' % (mysql_run,mysql_command) ).readlines():
     det,fname = sel.strip().split()
-    t0 = file(cdb_dir+fname).readlines()[0]
-    t0 = float(t0)
-    print det,t0
+    os.system('cp %s/%s %s.RT' % (cdb_dir,fname,det))
+    #print det,fname
+    #t0 = file(cdb_dir+fname).readlines()[0]
+    #t0 = float(t0)
+    #print det,t0
 
