@@ -1,0 +1,8 @@
+CMakeCache.txt
+CMakeOutput.log
+CMakeTmp
+cmake.*
+CMakeFiles
+cmake_install.cmake
+Makefile
+install_manifest.txt

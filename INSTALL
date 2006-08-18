@@ -1,0 +1,4 @@
+You have to set two environment variables.
+
+Example of configuration:
+$ cmake -DCMAKE_INSTALL_PREFIX=/afs/cern.ch/compass/detector/straw
