@@ -1,3 +1,9 @@
-SET(files1 "mapping.py")
-MESSAGE(${files1})
-INSTALL(FILES ${files1} DESTINATION lib/STRAW)
+MESSAGE("aaaaaaaaaaaa")
+#FILE(GLOB all_py ${CMAKE_CURRENT_SOURCE_DIR}/*.py)
+#SET(files1 "mapping.py")
+
+INSTALL(TARGETS
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+INSTALL(FILES ${all_py} 1.h DESTINATION include/Detectors)
