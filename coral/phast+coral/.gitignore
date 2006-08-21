@@ -1,0 +1,4 @@
+*.o
+coral.exe
+Depend.mk
+depend.mk
