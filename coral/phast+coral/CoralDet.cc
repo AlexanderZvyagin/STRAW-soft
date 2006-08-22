@@ -49,10 +49,10 @@ const CsHelix& helix_last(const CsTrack &t)
 ////////////////////////////////////////////////////////////////////////////////
 
 CoralDet::CoralDet(CsDet &det_) :
+    drift_det(NULL),
     det(&det_),
     misalignment(0)
 {
-    //ntuple = new TNtuple
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,9 +76,7 @@ const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
         return NULL;
     }
 
-    const double det_z = GetDriftDet()->GetPosition().GetShift().Z()*10;
-    
-    //printf("%s (z=%g) Helices: ",GetDriftDet()->GetName().c_str(),det_z);
+    const double det_z = GetDriftDet().GetPosition().GetShift().Z()*10;
     
     map<float,const CsHelix*> closest_helices;
     
@@ -127,7 +125,7 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
     // Interpolate a helix to the detector
     // *****************************
 
-    const double det_z = GetDriftDet()->GetPosition().GetShift().Z()*10;
+    const double det_z = GetDriftDet().GetPosition().GetShift().Z()*10;
     CsHelix intr;
     if( !helix->Extrapolate(det_z,intr) )
     {
@@ -140,7 +138,7 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
     // *****************************
 
     const Transform3D
-        &DRS_to_MRS = GetDriftDet()->GetPosition(),
+        &DRS_to_MRS = GetDriftDet().GetPosition(),
         &MRS_to_DRS = DRS_to_MRS.Inverse();
 
     trackMRS = Track3D(TVector3(intr.getX()/10,intr.getY()/10,intr.getZ()/10),
@@ -156,8 +154,9 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
 
 CoralDet *CoralDets::Create(CsDet &d)
 {
-    if( d.getAltDet()==NULL )
-        return NULL;
+    throw "CoralDets::Create() code removed!";
+    //if( d.getAltDet()==NULL )
+    //    return NULL;
 
     if( d.GetTBName().substr(0,2)=="ST" )
         return new CoralDetST(d);
@@ -173,6 +172,26 @@ CoralDet *CoralDets::Create(CsDet &d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void CoralDets::AddDetectors(void)
+{
+    for( Detectors::iterator d=begin(); d!=end(); d++ )
+    {
+        const string &name = (*d)->GetName();
+        CsDet *ptr = CsDet::GetAllDetectors()[name];
+        if( ptr==NULL )
+        {
+            printf("Detector was not found: %s\n",name.c_str());
+            continue;
+        }
+
+        CoralDet *d = CoralDets::Create(*ptr);
+        if( d!=NULL )
+            dets[ptr] = d;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // Try to make an association between the track and the detector
 bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 {
@@ -180,11 +199,8 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     // Check on the detector
     // *****************************
 
-    assert(NULL!=det->getAltDet());
-
-    DriftDetector *drift_det = dynamic_cast<DriftDetector*>(det->getAltDet());
     assert(drift_det!=NULL);
-    drift_det->GetObjCORAL().Clear();
+    GetDriftDet().GetObjCORAL().Clear();
 
     // *****************************
     // Now create Track3D objects of the interpolated track
@@ -333,27 +349,17 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 
 bool CoralDets::MakeAssociation(const CsTrack &t,CsDet &d,float misalignment)
 {
-    if( d.getAltDet()==NULL )
-        return false;
-    
     CoralDet *&det = dets[&d];
     if( det==NULL )
     {
-        det = Create(d);
-        printf("NEW CoralDet %s\n",d.GetTBName().c_str());
-        //det->det->getAltDet()->CreateObjectXML()->Print();
-    }
-
-    if( det==NULL )
+        printf("CoralDets::MakeAssociation() can not find detector %s\n",d.GetTBName().c_str());
         return false;
+    }
     
     // 'channel' is NULL if track did not cross the detector
     if( det->MakeAssociation(t,misalignment) )
     {
-        assert(det->det->getAltDet()!=NULL);
-        DriftDetector *dd = dynamic_cast<DriftDetector*>(det->det->getAltDet());
-        assert(dd!=NULL);
-        hits.push_back(CoralDet::Hit(dd->GetObjCORAL(),det));
+        hits.push_back(CoralDet::Hit(det->GetDriftDet().GetObjCORAL(),det));
         return true;
     }
     
@@ -385,11 +391,9 @@ void CoralDets::Fill(void)
 {
     for( vector<CoralDet::Hit>::iterator it=hits.begin(); it!=hits.end(); it++ )
     {
-        assert(it->coral_det->det->getAltDet()!=NULL);
-        DriftDetector *dd = dynamic_cast<DriftDetector*>(it->coral_det->det->getAltDet());
-        assert(dd!=NULL);
-        dd->GetObjCORAL() = it->co;
-        dd->FillCORALTree();
+        DriftDetector *dd = &it->coral_det->GetDriftDet();
+        dd -> GetObjCORAL() = it->co;
+        dd -> FillCORALTree();
     }
 }
 
@@ -404,7 +408,7 @@ bool CoralDet::IsDoubleLayer(const string &s) const
 
 bool CoralDet::DoubleHitsAnalyse(Hit &h1,Hit &h2)
 {
-    if( !h1.coral_det->IsDoubleLayer(h2.coral_det->det->getAltDet()->GetName()) )
+    if( !h1.coral_det->IsDoubleLayer(h2.coral_det->GetDriftDet().GetName()) )
         return false;
 
     if( abs(h1.co.GetChan()-h2.co.GetChan())>2 )

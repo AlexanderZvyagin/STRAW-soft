@@ -26,7 +26,6 @@ class CoralDet
     {
       public:
         Hit(const DriftDetectorCORAL &c,CoralDet *cord) : co(c),coral_det(cord) {}
-        //DriftDetectorChannel*   ch;
         DriftDetectorCORAL      co;
         CoralDet *              coral_det;
     };
@@ -36,7 +35,11 @@ class CoralDet
                         CoralDet                (CsDet &);
   public:
   
-    const DriftDetector *GetDriftDet            (void) {return reinterpret_cast<const DriftDetector*>(det->getAltDet());}
+    const
+    DriftDetector &     GetDriftDet             (void) const {return const_cast<CoralDet*>(this)->GetDriftDet();}
+
+    DriftDetector &     GetDriftDet             (void)       {if(drift_det==NULL)throw "CoralDet::GetDriftDet() empty!";return *drift_det;}
+  
     bool                Extrapolate             (const CsTrack &t) const;
     bool                MakeAssociation         (const CsTrack &t,float misalignment=0);
 
@@ -67,6 +70,7 @@ class CoralDet
     
   public:
 
+    DriftDetector *     drift_det;
     CsDet *             det;
     float               misalignment;
 };
@@ -98,14 +102,14 @@ class CoralDetDC: public CoralDet
     float               DistRTCoral             (float t) const;
 };
 
-class CoralDets
+class CoralDets: public Detectors
 {
   public:
                         CoralDets               (void) : tracks_counter(0) {}
 
-
     static CoralDet *   Create                  (CsDet &d);
 
+    void                AddDetectors            (void);
     bool                MakeAssociation         (const CsTrack &t,CsDet &d,float misalignment=0);
     void                DoubleHitsAnalyse       (void);
     void                Fill                    (void);

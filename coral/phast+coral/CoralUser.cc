@@ -15,10 +15,6 @@
 
 #include "CoralUser.h"
 
-#define WITH_Detectors 1
-
-#if WITH_Detectors
-
 #include "Detectors/DriftDetector.h"
 #include "CoralDet.h"
 
@@ -26,8 +22,8 @@ using namespace CS;
 
 vector<CoralDet::Hit> hits;
 CoralDets coral_dets;
+
 TH1F *h_ST_hits=NULL, *h_ST_hits6=NULL, *h_ST_hits10=NULL;
-#endif
 
 namespace Albert
 {
@@ -78,7 +74,10 @@ bool CoralUserInit()
     h_ST_hits6  = new TH1F("SThits6mm","Straw hits in 6mm straws",50,0,50);
     h_ST_hits10 = new TH1F("SThits10mm","Straw hits in 10mm straws",50,0,50);
 
+    coral_dets.ReadDetectorsDAT(*CsInit::Instance()->getDetectorTable());
 
+    coral_dets.AddDetectors();
+    
     Albert::CoralUserInit();
     return true;
 }
@@ -94,9 +93,8 @@ bool CoralUserEnd(void)
 
 bool CoralUserEvent()
 {
-    #if WITH_Detectors
     coral_dets.Clear();
-
+    
     // The loop on all tracks: find all tracks which pass the detectors
     for( list<CsTrack*>::const_iterator t=CsEvent::Instance()->getTracks().begin();
          t!=CsEvent::Instance()->getTracks().end(); t++,coral_dets.tracks_counter++ )
@@ -122,7 +120,6 @@ bool CoralUserEvent()
     
     coral_dets.DoubleHitsAnalyse();
     coral_dets.Fill();
-    #endif
 
     Albert::CoralUserEvent();
 
