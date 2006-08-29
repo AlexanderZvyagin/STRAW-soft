@@ -52,17 +52,17 @@ def make_options(file_opt,evjob):
     options.insert(0,"\n")
     options.insert(0,"events to read %d\n" % evjob)
     options.insert(0,"Data file ??\n")
-    options.insert(0,"histograms home ??\n")
-    options.insert(0,"mDST file ??\n")
+    options.insert(0,"histograms home ???CDR???\n")
+    options.insert(0,"mDST file ???CDR???\n")
     options.insert(0,"histograms package ROOT\n")
     
     return options
 
 
 def set_options(options,data_file,output_path=''):
-    r = re.match('.*/(?P<period>...)/(?P<file>cdr.*)\.raw',data_file)
+    r = re.match('.*/(?P<file>cdr.*)\.raw',data_file)
     if r==None:
-        print 'Bad file name:', data_file
+        raise 'Bad file name: %s' % data_file
     ff = r.group('file')
     root_file = ff+'.root'
     mDST_file = 'mDST-'+ff+'.root'
@@ -72,6 +72,12 @@ def set_options(options,data_file,output_path=''):
     options[1] = "mDST file %smDST-%s\n" % (output_path,root_file)
     options[2] = "histograms home %s%s\n" % (output_path,root_file)
     options[3] = "Data file %s\n" % data_file
+
+    for i in range(len(options)):
+        r = re.match('(?P<start>.*)(?P<cdr>\?\?\?CDR\?\?\?)(?P<end>.*)',options[i])
+        if r:
+            options[i] = r.group('start')+ff+r.group('end')
+#            print options[i]
 
     return ff
 
@@ -108,9 +114,14 @@ def main():
 
     if options.run!=None:
         for f in db.get_run_files(options.run,True,options.dbaccess):
-            short_name = set_options(coral_options,f,options.output)
+            # copy options
+            opts = []
+            for o in coral_options:
+                opts.append(o)
+            # set them!
+            short_name = set_options(opts,f,options.output)
             fname = short_name+'.opt'
-            open(fname,'w').write(''.join(coral_options))
+            open(fname,'w').write(''.join(opts))
             print fname
 
 
