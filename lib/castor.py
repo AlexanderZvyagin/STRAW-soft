@@ -57,7 +57,7 @@ def cdr_files_2002(printout=0):
                 if printout>0:
                     print 'Scanning directory',d
                 for f in rfdir_cdr_files(d,printout):
-                    f['year']=2004
+                    f['year']=2002
                     f['period']=period
                     yield f
 
@@ -72,7 +72,7 @@ def cdr_files_2003(printout=0):
             if printout>0:
                 print 'Scanning directory',d
             for f in rfdir_cdr_files(d,printout):
-                f['year']=2004
+                f['year']=2003
                 f['period']=period
                 yield f
 
@@ -94,15 +94,41 @@ def cdr_files_2004(printout=0):
             f['period']=period
             yield f
 
+# Generator of CDR files in 2006 castor directory
+def cdr_files_2006(printout=0):
+    dirs='/castor/cern.ch/compass/data/2006/raw/'
+    lst=[]
+    for i in range(0,55):
+        lst.append('T%2.2d'%i)
+    for i in range(21,55):
+        lst.append('W%2.2d'%i)
+
+    for period in lst:
+        d = dirs+period
+        if printout>0:
+            print 'Scanning directory',d
+        for f in rfdir_cdr_files(d,printout):
+            f['year']=2006
+            f['period']=period
+            yield f
 
 # Generator of CDR files from castor
-def cdr_files(printout=0):
-    for f in cdr_files_2002():
-        yield f
-    for f in cdr_files_2003():
-        yield f
-    for f in cdr_files_2004():
-        yield f
+def cdr_files(years=[],printout=0):
+    if not years:
+        # Set default value
+        years=(2002,2003,2004,2006,2007,2008,2009,2010)
+    if 2002 in years:
+        for f in cdr_files_2002():
+            yield f
+    if 2003 in years:
+        for f in cdr_files_2003():
+            yield f
+    if 2004 in years:
+        for f in cdr_files_2004():
+            yield f
+    if 2006 in years:
+        for f in cdr_files_2006():
+            yield f
 
 ########################################################################
 ### The self test
