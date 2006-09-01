@@ -95,14 +95,6 @@ const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
             // Otherwise add it to the list of found helices.
             closest_helices[dz]=&*h;
     }
-    //printf("\n");
-    
-//     for( map<float,const CsHelix*>::const_iterator h=closest_helices.begin();
-//          h!=closest_helices.end(); h++ )
-//     {
-//         printf("  %g",h->second->getZ());
-//     }
-//     printf("\n");
 
     if( closest_helices.empty() )
         return NULL;
@@ -154,10 +146,6 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
 
 CoralDet *CoralDets::Create(CsDet &d)
 {
-    throw "CoralDets::Create() code removed!";
-    //if( d.getAltDet()==NULL )
-    //    return NULL;
-
     if( d.GetTBName().substr(0,2)=="ST" )
         return new CoralDetST(d);
 
@@ -167,7 +155,10 @@ CoralDet *CoralDets::Create(CsDet &d)
     if( d.GetTBName().substr(0,2)=="DW" )
         return new CoralDetDW(d);
     
-    return new CoralDet(d);
+    if( d.GetTBName().substr(0,2)=="DR" )
+        return new CoralDetDW(d);
+    
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,9 +175,13 @@ void CoralDets::AddDetectors(void)
             continue;
         }
 
-        CoralDet *d = CoralDets::Create(*ptr);
-        if( d!=NULL )
-            dets[ptr] = d;
+        CoralDet *det = CoralDets::Create(*ptr);
+        if( det!=NULL )
+        {
+            det -> drift_det = dynamic_cast<DriftDetector*>(*d);
+            assert(det!=NULL);
+            dets[ptr] = det;
+        }
     }
 }
 
@@ -199,7 +194,9 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     // Check on the detector
     // *****************************
 
-    assert(drift_det!=NULL);
+    if( drift_det==NULL )
+        return false;
+    
     GetDriftDet().GetObjCORAL().Clear();
 
     // *****************************
@@ -301,26 +298,6 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
             fill=true;           // We supposed to have a hit! (non-efficiency has been detected).
     }
 
-//     {
-//         if( hits.size()>1 )
-//             printf("More then one hit is found: %d!\n",hits.size());
-// 
-//         if( drift_det->GetName().substr(0,2)=="ST" &&
-//             hits.size()>=1 && channel_best!=NULL &&
-//             channel_best->GetChannelPos()!=0 )
-//             if( channel_best!=*hits.begin() )
-//             {
-//                 printf("best hit is in %s channel(%3d,%d)\n",drift_det->GetName().c_str(),channel_best->GetChannel(),channel_best->GetChannelPos());
-// 
-//                 printf("%s ch=%3d chp=%2d  hMRS(x,y,z)=(%+6.1f,%+6.1f,%+8.1f)  hDRS(x,y,z)=(%+6.1f,%+6.1f,%+8.1f)\n",
-//                         drift_det->GetName().c_str(),(*hits.begin())->GetChannel(), (*hits.begin())->GetChannelPos(),
-//                         trackMRS.GetPoint().X(),trackMRS.GetPoint().Y(),trackMRS.GetPoint().Z(),
-//                         trackDRS.GetPoint().X(),trackDRS.GetPoint().Y(),trackDRS.GetPoint().Z());
-//             }
-//             else
-//                 printf("OK!\n");
-//     }
-
     if( fill )
     {
         drift_det->GetObjCORAL().SetHitMRS(hitMRS);
@@ -351,10 +328,7 @@ bool CoralDets::MakeAssociation(const CsTrack &t,CsDet &d,float misalignment)
 {
     CoralDet *&det = dets[&d];
     if( det==NULL )
-    {
-        printf("CoralDets::MakeAssociation() can not find detector %s\n",d.GetTBName().c_str());
         return false;
-    }
     
     // 'channel' is NULL if track did not cross the detector
     if( det->MakeAssociation(t,misalignment) )
