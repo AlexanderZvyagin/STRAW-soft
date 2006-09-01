@@ -11,6 +11,7 @@ class CsHelix;
 class CsStrawTubesDetector;
 class CsDriftChamberDetector;
 class CsDWDetector;
+class CsRichWallDetector;
 
 namespace CS {
 
@@ -90,6 +91,15 @@ class CoralDetDW: public CoralDet
                         CoralDetDW              (CsDet &d) : CoralDet(d) {misalignment=1;}
     bool                IsDoubleLayer           (const string &s) const;
     const CsDWDetector *        DetCoral        (void) const {return reinterpret_cast<const CsDWDetector*>(det);}
+    float               DistRTCoral             (float t) const;
+};
+
+class CoralDetDR: public CoralDet
+{
+  public:
+                        CoralDetDR              (CsDet &d) : CoralDet(d) {misalignment=1;}
+    bool                IsDoubleLayer           (const string &s) const;
+    const CsRichWallDetector * DetCoral         (void) const {return reinterpret_cast<const CsRichWallDetector*>(det);}
     float               DistRTCoral             (float t) const;
 };
 
