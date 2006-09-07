@@ -16,11 +16,10 @@
 #include "TStyle.h"
 #include "TSQLServer.h"
 
-#include "s_stream.h"
+#include "Detectors/s_stream.h"
 #include "V.h"
-#include "VS/VS.h"
-#include "RTRelationGrid.h"
-#include "RTRelationPoly.h"
+#include "Detectors/RTRelationGrid.h"
+#include "Detectors/RTRelationPoly.h"
 
 using namespace std;
 using namespace CS;
@@ -63,11 +62,11 @@ string
 TSQLServer
     *db                 = NULL;
 
-V* VConstruct_default(void) {return new VS;}
+V* VConstruct_default(void) {throw "VConstruct_default(): no code.";}
 void VDestroy_default(V *v) {delete v;}
 V* (*VConstruct)(void) = VConstruct_default;
 void (*VDestroy)(V *v) = VDestroy_default;
-V *v_code=VConstruct();
+V *v_code=NULL;
 } // namespace
 
 int minuit_printout     = -1;
@@ -99,6 +98,9 @@ float get_t0_ref(const string &detector,const string &t0_ref)
 
 void many_V_fit(void)
 {
+    if( v_code==NULL )
+        throw "many_V_fit(): v_cide==NULL";
+
     char name[88], title[88];
     sprintf(name,"%s.root",session);
     TFile f(name,"UPDATE","",9);

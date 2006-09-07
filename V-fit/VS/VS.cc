@@ -14,7 +14,7 @@
 #include "TSQLServer.h"
 
 #include "VS.h"
-#include "RTRelationGrid.h"
+#include "Detectors/RTRelationGrid.h"
 
 using namespace std;
 

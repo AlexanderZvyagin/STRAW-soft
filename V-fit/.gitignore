@@ -1,2 +1,6 @@
 V
 vcmp
+progress.make
+Makefile
+*.so
+*.root
