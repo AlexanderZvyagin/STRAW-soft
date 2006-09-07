@@ -18,6 +18,7 @@
 
 #include "Detectors/s_stream.h"
 #include "V.h"
+#include "VS/VS.h"
 #include "Detectors/RTRelationGrid.h"
 #include "Detectors/RTRelationPoly.h"
 
@@ -50,7 +51,7 @@ const char
     *detector           = "",
     *file_in            = "",
     *db_name            = "STDC",
-    *plugin_code        = "VS/libVS.so",
+    *plugin_code        = "",
     *rt_string          = NULL,
     *fit_function       = "",
     *cuts               = "(tr_Xi2/tr_nh<3)&&(tr_z1<1450)&&(abs(tr_t)<4)&&(tr_q!=0)",
@@ -62,11 +63,11 @@ string
 TSQLServer
     *db                 = NULL;
 
-V* VConstruct_default(void) {throw "VConstruct_default(): no code.";}
+V* VConstruct_default(void) {return new VS;}
 void VDestroy_default(V *v) {delete v;}
 V* (*VConstruct)(void) = VConstruct_default;
 void (*VDestroy)(V *v) = VDestroy_default;
-V *v_code=NULL;
+V *v_code=VConstruct_default();
 } // namespace
 
 int minuit_printout     = -1;
@@ -290,11 +291,9 @@ int main(int argc,const char *argv[])
         struct poptOption options[] =
         {
             { "code",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &plugin_code, 'p',
-                                          "V code to load", "library.so" },
+                                          "V code to load, don't use it if your happy with the default one.", "library.so" },
             { "data",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &file_in,     0,
-                                          "Input ROOT file. "
-                                          "Sasha' ntuples: /home2/zvyagin/results-coral/7/27573.root. "
-                                          "Klaus' ntuples: /home/rgeyer/Klaus/reiner_V/ROOT_files/", "PATH" },
+                                          "Input ROOT file. ", "PATH" },
             { "det",        '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &detector,    0,
                                           "STRAW detector to be used", "NAME" },
             { "mdebug",     '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_printout,0,
