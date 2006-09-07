@@ -6,7 +6,7 @@
 #include "TText.h"
 #include "TPaveText.h"
 
-#include "RTRelation.h"
+#include "Detectors/RTRelation.h"
 
 #include "V.h"
 
