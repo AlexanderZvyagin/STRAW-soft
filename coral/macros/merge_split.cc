@@ -108,7 +108,7 @@ void merge_split(const vector<string> &files,const string &dir_out)
             if( o.first==NULL )
             {
                 assert(o.second==NULL);
-                o.first = TFile::Open((dir_out+string(ptr->GetName(),l-6)+".root").c_str(),"RECREATE");
+                o.first = TFile::Open((dir_out+"/"+string(ptr->GetName(),l-6)+".root").c_str(),"RECREATE");
             }
             if( !o.first->IsOpen() )
                 throw "Can not create file!";
