@@ -362,6 +362,9 @@ void V::Residual::Book(const std::string &_name,const std::string &_title)
         if( name[i]==' ' )
             name[i]='_';
         else
+        if( name[i]=='_' )
+            {}
+        else
         if( !isalpha(name[i]) )
             throw "V::Residual::Book(): Bad name!";
 
@@ -380,20 +383,16 @@ void V::FillResidualPlots(VFitResult &result)
     if( result.rt==NULL )
         throw "V::FillResidualPlots(): RT is unknown.";
 
+    FillResidualPlot("resFIT",
+                     &result.residuals_corr[0],&result.residuals_corr[1],&result.residuals_corr[2],
+                     result.vdata,*result.rt,result.t0,result.w0);
+
     if( result.t0_ref!=0 )
     {
         FillResidualPlot("resCORAL",
                          &result.residuals_ref[0],&result.residuals_ref[1],&result.residuals_ref[2],
                          result.vdata,*result.rt,result.t0_ref,result.w0);
     }
-
-    if( result.t0!=0 )
-    {
-        FillResidualPlot("resFIT",
-                         &result.residuals_corr[0],&result.residuals_corr[1],&result.residuals_corr[2],
-                         result.vdata,*result.rt,result.t0,result.w0);
-    }
-    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
