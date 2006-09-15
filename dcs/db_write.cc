@@ -6,7 +6,7 @@
 
 #include "dcs.h"
 
-static bool debug=false;
+static bool debug=true;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -173,7 +173,7 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         if( strlen(s)<3 || 0!=strncmp(s,"dcs",3) )
             continue;
 
-        char dcs_name[33];
+        char dcs_name[33], channel_name[44];
         float temperature;
         int year,month,day,hour,min,sec;
 
@@ -181,10 +181,7 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         if( strlen(s)>0 && s[strlen(s)-1]=='\n' )
             s[strlen(s)-1]=0;
 
-        // Format:
-        // dcs1:ST03V2_TDJ       29.7           2004 05 01 00 08 29
-
-        if( 8!=sscanf(s,"%s %g %d %d %d %d %d %d",dcs_name,&temperature,&year,&month,&day,&hour,&min,&sec) )
+        if( 9!=sscanf(s,"%s %s %g %d %d %d %d %d %d",dcs_name,channel_name,&temperature,&year,&month,&day,&hour,&min,&sec) )
         {
             if( debug )
                 printf("Can not read line \"%s\"\n",s);
@@ -199,12 +196,16 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         char detector[55], sensor[55];
         
         // Decode DCS module and channel
-        if( 3!=sscanf(dcs_name,"dcs%d:%6s_%s",&dcs,detector,sensor) )
+        char *slash = strrchr(channel_name,'/'), *char_=strchr(slash,'_');
+        assert( strlen(slash)<sizeof(detector) );
+        if( slash!=NULL && char_!=NULL )
         {
-            printf("Can not decode line.\n");
-            continue;
+            strncpy(detector,slash+1,char_-slash-1);
+            strcpy(sensor,char_+1);
         }
-
+        else
+            printf("Can not decode name: %s\n",channel_name);
+        
         sprintf(buf,"INSERT INTO dcs.Temperature (time,detector,sensor,temperature) VALUES(%s,'%s','%s',%g);",
                 timestamp,detector,sensor,temperature);
         if( !db->Query(buf) )
