@@ -59,7 +59,7 @@ def main():
             script.write('rm -f %s\n' % f_in)
 
         if options.queue:
-            all_cmds.write('bsub -q %s ' % options.queue)
+            all_cmds.write('bsub -q %s -oo %s.log ' % (options.queue,name) )
             if options.name:
                 all_cmds.write('-J %s ' % options.name)
             all_cmds.write('%s\n' % script_sh)
