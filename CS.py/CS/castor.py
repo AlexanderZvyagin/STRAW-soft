@@ -1,6 +1,7 @@
 import string,re,os,sys
 
-## Dictionary with the CDR file attributes
+##  Dictionary with the CDR file attributes
+#
 def file_cdr(d,f):
     q = {}
 
@@ -102,6 +103,7 @@ def cdr_files_2006(printout=0):
         lst.append('T%2.2d'%i)
     for i in range(21,55):
         lst.append('W%2.2d'%i)
+    lst.append('test')
 
     # This allows to add new files first.
     lst.reverse()
