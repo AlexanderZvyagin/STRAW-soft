@@ -18,6 +18,7 @@ class VS: public V
     void                VFit                    (VFitResult &result);
 
     void                CalculateRT             (VFitResult &result,float dx,const std::vector<float> &rrr);
+    void                CalculateRT2            (VFitResult &result);
     static float        GetT0                   (TH1 &h_p);
     static TGraphErrors*FitV                    (TH2 &h, VFitResult &result);
 };

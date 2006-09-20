@@ -398,7 +398,7 @@ void V::FillResidualPlots(VFitResult &result)
 ////////////////////////////////////////////////////////////////////////////////
 
 void V::FillResidualPlot(const std::string &name, Residual *res_all,Residual *res_left,Residual *res_right,
-                         const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0)
+                         const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit)
 {
     if( name!="" )
     {
@@ -413,7 +413,14 @@ void V::FillResidualPlot(const std::string &name, Residual *res_all,Residual *re
 
     RTRelation *rt = rt_orig.Clone();
     rt->SetT0(t0);
-    
+
+    if( res_all!=NULL )
+        res_all->points_taken = res_all->points_rejected = 0;
+    if( res_left!=NULL )
+        res_left->points_taken = res_left->points_rejected = 0;
+    if( res_right!=NULL )
+        res_right->points_taken = res_right->points_rejected = 0;
+
     for( std::vector<VData>::const_iterator v=vdata.begin(); v!=vdata.end(); v++ )
     {
         try
@@ -424,22 +431,43 @@ void V::FillResidualPlot(const std::string &name, Residual *res_all,Residual *re
                 rr = v->x-w0 - r;
             r = fabs(rl)<fabs(rr) ? rl:rr;
             
+            if( fabs(r)>r_limit )
+                throw 1;
+            
             if( fabs(rl)<fabs(rr) )
             {
-                if( res_left!=NULL  && res_left->GetHist()!=NULL )
-                    res_left->GetHist()->Fill(rl);
+                if( res_left!=NULL )
+                {
+                    res_left -> points_taken ++;
+                    if( res_left->GetHist()!=NULL )
+                        res_left->GetHist()->Fill(rl);
+                }
             }
             else
             {
-                if( res_right!=NULL && res_right->GetHist()!=NULL )
-                    res_right->GetHist()->Fill(rr);
+                if( res_right!=NULL )
+                {
+                    res_right -> points_taken ++;
+                    if( res_right->GetHist()!=NULL )
+                        res_right->GetHist()->Fill(rr);
+                }
             }
             
-            if( res_all!=NULL && res_all->GetHist()!=NULL )
-                res_all->GetHist()->Fill(r);
+            if( res_all!=NULL )
+            {
+                res_all -> points_taken ++;
+                if( res_all->GetHist()!=NULL )
+                    res_all->GetHist()->Fill(r);
+            }
         }
         catch(...)
         {
+            if( res_all!=NULL )
+                res_all -> points_rejected ++;
+            if( res_left!=NULL )
+                res_left -> points_rejected ++;
+            if( res_right!=NULL )
+                res_right -> points_rejected ++;
         }
     }
 

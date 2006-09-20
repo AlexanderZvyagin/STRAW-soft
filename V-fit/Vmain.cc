@@ -51,7 +51,6 @@ const char
     *detector           = "",
     *file_in            = "",
     *db_name            = "STDC",
-    *plugin_code        = "",
     *rt_string          = NULL,
     *fit_function       = "",
     *cuts               = "(tr_Xi2/tr_nh<3)&&(tr_z1<1450)&&(abs(tr_t)<4)&&(tr_q!=0)",
@@ -157,7 +156,7 @@ void many_V_fit(void)
                     result.r = result.rt->GetRMax();
 
                 if( result.dt==0 )
-                    result.dt = result.rt->GetTMax() - result.rt->GetT0();
+                    result.dt = result.rt->GetTMax();
 
                 result.rt->SetUseLimits(rt_limits);
             }
@@ -290,8 +289,6 @@ int main(int argc,const char *argv[])
 
         struct poptOption options[] =
         {
-            { "code",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &plugin_code, 'p',
-                                          "V code to load, don't use it if your happy with the default one.", "library.so" },
             { "data",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &file_in,     0,
                                           "Input ROOT file. ", "PATH" },
             { "det",        '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &detector,    0,
@@ -309,8 +306,8 @@ int main(int argc,const char *argv[])
                                           "Example: --pos=-30,5", "center,delta" },
             { "RT",         '\0', POPT_ARG_STRING,  &rt_string,                             0,
                                           "RT relations to bee used in fitting.", "STRING" },
-            { "RT-r",       '\0', POPT_ARG_STRING,  &rt_r,                                 'R',
-                                          "List of deistances (separated by space) to be used for fixed RT", "STRING" },
+            { "RT-r",       '\0', POPT_ARG_STRING,  &rt_r,                                  0,
+                                          "List of distances (separated by space) to be used for fixed RT", "STRING" },
             { "rt-range",   '\0', POPT_ARG_NONE, &rt_limits,                               'l',
                                           "Use RT range in V-fitting procedure, default - no range limitation.", "NUMBER" },
             { "dt",         '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &dt,           0,

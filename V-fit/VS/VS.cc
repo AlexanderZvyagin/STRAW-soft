@@ -17,6 +17,7 @@
 #include "Detectors/RTRelationGrid.h"
 
 using namespace std;
+using namespace CS;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -25,6 +26,76 @@ extern int minuit_printout;
 namespace {
 
 V::VFitResult *_res_=NULL;
+VS *me = NULL;
+
+RTRelationGrid RT_construct(const RTRelation &rt_template,int n,double *x)
+{
+    const RTRelationGrid *q = dynamic_cast<const RTRelationGrid*>(&rt_template);
+
+    if( q==NULL )
+        throw "RT_construct(): not a RTRelationGrid!";
+
+    if(  n!=q->GetPointsT().size() )
+    {
+        printf("RT_construct(): bad number of points: %d!=%d\n",n,q->GetPointsT().size());
+        throw "RT_construct(): bad number of RT points";
+    }
+    
+    string rt_string="RT-Grid";
+    
+    for( int i=0; i<n; i++ )
+    {
+        char s[55];
+        sprintf(s," %g:%g",q->GetPointsR()[i],x[i]);
+        rt_string += s;
+    }
+
+    return RTRelationGrid(rt_string);
+}
+
+void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
+{
+    if( me==NULL || _res_==NULL || _res_->rt==NULL )
+        throw "fcn_RT_calc(): not enough info!";
+
+    if( np<4 )
+        throw "There are not enough arguments!";
+
+    // The first two points are w0 and t0:
+    const double w0=x[0], t0=x[1];
+
+    try
+    {
+        RTRelationGrid rt=RT_construct(*_res_->rt,np-2,x+2);
+        rt.SetT0(t0);
+
+        V::Residual r;
+
+        const float r_limit = 0.075;
+        me->FillResidualPlot("RT_fit", &r, NULL, NULL, _res_->vdata,rt,t0,w0,r_limit);
+        r.Fit();
+
+        #warning "Resolution is taken from a first parameter of residual fit."
+        fr = r.GetFitFunc()->GetParameter(0);
+        
+        // Try to maximize number of fitted points.
+        //  1 is added to avoid the possible '0' values.
+        fr /= (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
+
+        if( minuit_printout>=3 )
+            printf("FCN: %9.7f = %9.7f / %9.7f\n",fr,r.GetFitFunc()->GetParameter(0),r.points_taken/float(r.points_taken+r.points_rejected));
+
+        return;
+    }
+    catch( ... )
+    {
+        fr = 1;
+        return;
+    }
+    
+
+    throw "fcn_RT_calc(): internal problem!";
+}
 
 void f_space(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
 {
@@ -164,7 +235,6 @@ void prefit_T0_w0(const V::VFitResult &result,double &t0,double &w0)
     minuit.SetFCN(fcn_t0);
 
     minuit.mnexcm("MINIMIZE", arglist ,0,ierflg);
-    //minuit.mnmnos();
 
     // -- Read fit results.
 
@@ -799,8 +869,137 @@ void VS::CalculateRT(V::VFitResult &result,float dx,const vector<float> &rrr)
 
     // Write the report.
     canvas->Write();
-    canvas->Print("","eps");
+    canvas->Print("",".eps");
     
+    delete canvas;  // release the memory.
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void VS::CalculateRT2(V::VFitResult &result)
+{
+    // -- A simple check to speed-up fit failer for empty data sets.
+    if( result.vdata.size()<10 )
+    {
+        result.t0       = 0;
+        result.t0_err   = 0;
+        result.w0       = 0;
+        result.w0_err   = 0;
+        result.success  = -1;
+        return;
+    }
+
+    if( result.rt==NULL )
+        throw "VS::CalculateRT2(): You must provide an initial RT.";
+
+    RTRelationGrid *rt = dynamic_cast<RTRelationGrid*>(result.rt);
+    if( rt==NULL )
+        throw "VS::CalculateRT2(): Your RT must have type RTRelationGrid!";
+
+    char name[111], title[111];
+    sprintf(name,"%s_V",result.detector.c_str());
+    sprintf(title,"V-plot for %s chf=%d chl=%d   region=[%d-%d,%d+%d]",
+            result.detector.c_str(),result.channel_first,result.channel_last,
+            result.pos,result.delta,result.pos,result.delta);
+
+    delete result.hV;   // remove the previous histogram
+    result.hV = MakeHistogram(name,title,result.vdata,result.r*2.2,result.dt*1.4);
+    result.hV->Write();
+
+
+    if( result.vdata.size()<100 )
+    {
+        printf("VS::CalculateRT2(): Too little (%d) points to fit.\n",result.vdata.size());
+        return;
+    }
+
+    // ===================
+
+    TMinuit minuit(rt->GetPointsT().size()+2);
+
+    int ierflg;
+    double arglist[11];
+
+    // -- Set the debug printout level by the fitting code.
+    arglist[0]=minuit_printout;
+    minuit.mnexcm("SET PRINTOUT", arglist ,1,ierflg);
+    
+    if( minuit_printout==-1 )
+        minuit.mnexcm("SET NOWARNINGS", arglist ,0,ierflg);
+
+    // -- Declare variables for the fit.
+    minuit.DefineParameter(0,"w0",result.w0_start,0.1,-0.15,0.15);
+    minuit.DefineParameter(1,"T0",result.t0_start,1,0,0);
+
+    for( size_t i=0; i<rt->GetPointsT().size(); i++ )
+    {
+        char s[22];
+        sprintf(s,"t%d",i+1);
+        minuit.DefineParameter(2+i,s,rt->GetPointsT()[i],1,0,rt->GetTMax());
+    }
+
+    // -- Set the fit function.
+    minuit.SetFCN(fcn_RT_calc);
+
+    me = this;
+    _res_ = &result;
+
+    arglist[0] = 1000;
+    minuit.mnexcm("SIMPLE", arglist ,1,ierflg);
+//    minuit.mnmnos();
+
+    // Clear some variables which are used by minuit.
+
+    me = NULL;
+    _res_ = NULL;
+
+    // Read fit results.
+
+    double f_min,par, err;
+
+    minuit.mnstat(f_min,par,par,ierflg,ierflg,ierflg);
+    result.xi2 = f_min;
+
+    minuit.GetParameter(0,par,err);
+    result.w0=par;
+    result.w0_err=err;
+
+    minuit.GetParameter(1,par,err);
+    result.t0=par;
+    result.t0_err=err;
+
+    assert( rt->GetPointsR().size()==(minuit.GetNumPars()-2) );
+    double x[rt->GetPointsR().size()];
+    for( size_t i=0; i<rt->GetPointsR().size(); i++ )
+    {
+        minuit.GetParameter(i+2,par,err);
+        x[i] = par;
+    }
+    
+    result.rt = new RTRelationGrid(RT_construct(*rt,rt->GetPointsR().size(),x));
+    result.rt->SetT0(result.t0);
+    delete rt;
+
+    // Make the report.
+    
+    sprintf(name,"%s_chf%d_chl%d_delta%d_report",
+            result.detector.c_str(),
+            result.channel_first,
+            result.channel_last,
+            int(result.delta));
+
+    TCanvas *canvas = new TCanvas(name,title,600,900);
+    //canvas->Divide(2,2);
+
+    // V-plot and fit result
+    canvas->cd(1);
+
+    result.hV->Draw("colz");
+    result.rt->MakeGraph(result.w0)->Draw("SL*");
+
+    // Write the report.
+    canvas->Write();
+    canvas->Print("",".eps");
     delete canvas;  // release the memory.
 }
 
@@ -865,8 +1064,6 @@ void VS::VFit(VFitResult &result)
     // -- Declare variables for the fit.
     minuit.DefineParameter(0,"w0",w0_start,0.1,-0.15,0.15);
     minuit.DefineParameter(1,"t0",t0_start,1,t0_start-_res_->rt->GetTMax(),t0_start+_res_->rt->GetTMax());
-    //minuit.DefineParameter(2,"xe",0.1,0.1,0.01,0.05);
-    //minuit.DefineParameter(3,"b",1,1,0,15);
 
     // -- Set the fit function.
     if( result.fit_function=="time" )
@@ -890,6 +1087,8 @@ void VS::VFit(VFitResult &result)
     //minuit.mnmnos();
     arglist[0]=1000;
     minuit.mnexcm("MINOs", arglist, 1,ierflg);
+    
+    _res_ = NULL;
 
     // -- Read fit results.
 
@@ -901,9 +1100,9 @@ void VS::VFit(VFitResult &result)
     result.xi2 = f_min;
 
     minuit.GetParameter(1,par,err);
-    _res_->rt->SetT0(par);
     result.t0=par;
     result.t0_err=err;
+    result.rt->SetT0(result.t0);
 
     minuit.GetParameter(0,par,err);
     result.w0=par;
@@ -930,24 +1129,33 @@ void VS::VCreate(const char *src,VFitResult &result)
         throw "Object is not TTree!";
 
     // Create cuts
-    if( result.channel_first==result.channel_last )
-        sprintf(s,"ch==%d",result.channel_first);
+    *s=0;
+    if( result.channel_first>=0 )
+        if( result.channel_first==result.channel_last )
+            sprintf(s,"ch==%d",result.channel_first);
+        else
+            sprintf(s,"ch>=%d&&ch<=%d",result.channel_first,result.channel_last);
     else
-        sprintf(s,"ch>=%d&&ch<=%d",result.channel_first,result.channel_last);
+        sprintf(s,"1");
     if( result.delta>0 )
         sprintf(s+strlen(s),"&&abs(wy-%d)<%d",result.pos,result.delta);
     if( result.cuts.size()>0 )
         sprintf(s+strlen(s),"&&%s",result.cuts.c_str());
-    
+
     // Now make the events selection
     nt->Draw(">>elist",s);
 
     // Load events selection
     TEventList *elist = (TEventList*)gDirectory->Get("elist");
-    
-    // Tell to the TTree to use it
-    nt->SetEventList(elist);
+    assert(elist!=NULL);
 
+    // This code is written to bypass a memory leakage
+    // in ROOT related to the TEventList class usage.
+    vector<Long64_t> events;
+    for( int i=0; i<elist->GetN(); i++ )
+        events.push_back(elist->GetEntry(i));
+    delete elist;
+    
     // Set addresses of variables we need to analyse.
     float ch,chp,d,wy,t;
     nt->SetBranchAddress("ch",&ch);
@@ -956,10 +1164,10 @@ void VS::VCreate(const char *src,VFitResult &result)
     nt->SetBranchAddress("d",&d);
     nt->SetBranchAddress("t",&t);
 
-    // Loop only over selected events.
-    for( int i=0; i<elist->GetN(); i++ )
+    // Loop only over the selected events.
+    for( size_t i=0; i<events.size(); i++ )
     {
-        if( nt->GetEvent(elist->GetEntry(i))<=0 )
+        if( nt->GetEvent(events[i])<=0 )
             printf("VS::VCreate(): Can not read all events from the ntuple!\n");
 
         result.vdata.push_back( VData() );
@@ -975,9 +1183,6 @@ void VS::VCreate(const char *src,VFitResult &result)
             result.vdata.back().t += dt;
         }
     }
-
-    // Free memory.
-    delete elist;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

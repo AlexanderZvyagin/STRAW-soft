@@ -76,7 +76,7 @@ class V
     {
       public:
 
-        Residual (void) : h(NULL), fit_func(NULL) {}
+        Residual (void) : h(NULL), fit_func(NULL),points_taken(0),points_rejected(0) {}
         ~Residual(void);
         
         void    Book    (const std::string &name,const std::string &title);
@@ -106,6 +106,10 @@ class V
         /*! \brief Residual plot fit function
         */
         TF1 *fit_func;
+        
+        
+        unsigned int    points_taken;
+        unsigned int    points_rejected;
     };
 
     /*! \brief Result of fit from V-plot
@@ -341,7 +345,7 @@ class V
         \param w0       V-plot misalignment.
     */
     virtual void        FillResidualPlot        (const std::string &name, Residual *res_all,Residual *res_left,Residual *res_right,
-                                                 const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0);
+                                                 const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit=100);
     
     /*! \brief Fill time difference plot
         \param ht       Empty histogram to be filled.
