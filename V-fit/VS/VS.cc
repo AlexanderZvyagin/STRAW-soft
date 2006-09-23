@@ -75,15 +75,17 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
         me->FillResidualPlot("RT_fit", &r, NULL, NULL, _res_->vdata,rt,t0,w0,r_limit);
         r.Fit();
 
-        #warning "Resolution is taken from a first parameter of residual fit."
-        fr = r.GetFitFunc()->GetParameter(0);
+        #warning "Resolution is taken from a first parameter of the residual fit."
+        const double residual = r.GetFitFunc()->GetParameter(0);
         
-        // Try to maximize number of fitted points.
+        // Try to maximize the number of fitted points.
         //  1 is added to avoid the possible '0' values.
-        fr /= (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
+        const double k = (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
+
+        fr = residual/k;
 
         if( minuit_printout>=3 )
-            printf("FCN: %9.7f = %9.7f / %9.7f\n",fr,r.GetFitFunc()->GetParameter(0),r.points_taken/float(r.points_taken+r.points_rejected));
+            printf("FCN: %9.7f = %9.7f / %9.7f\n",fr,residual,k);
 
         return;
     }
@@ -944,9 +946,10 @@ void VS::CalculateRT2(V::VFitResult &result)
     me = this;
     _res_ = &result;
 
-    arglist[0] = 1000;
-    minuit.mnexcm("SIMPLE", arglist ,1,ierflg);
-//    minuit.mnmnos();
+    arglist[0] = 2000;
+    //minuit.mnexcm("SIMPLE", arglist ,1,ierflg);
+    minuit.mnexcm("MINIMIZE", arglist ,1,ierflg);
+    //minuit.mnmnos();
 
     // Clear some variables which are used by minuit.
 
