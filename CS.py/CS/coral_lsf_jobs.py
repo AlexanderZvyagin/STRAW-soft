@@ -13,6 +13,9 @@ def main():
 
     parser.add_option('', '--test',dest='test',default=False,action='store_true',
                       help='Test mode (one job, 8nm queue, 10 events)')
+
+    parser.add_option('', '--submit',dest='submit',default=False,action='store_true',
+                      help='Submit jobs at the end!')
     
     (options, args) = parser.parse_args()
 
@@ -43,7 +46,7 @@ def main():
         commands.append('. setup.sh')
         commands.append('cd %s' % os.getcwd())
         
-        if os.path.splitext(sys.argv[0]):
+        if os.path.splitext(sys.argv[0])[1]:
             run_me = 'python'
         else:
             run_me = 'cs'
@@ -107,8 +110,14 @@ def main():
         print 'Failed to execute the jobs! Why?'
         return 1
     
-    print 'Everything went perfect. Your jobs were submitted successfully.'
-
+    if options.submit:
+        if os.system('./jobs.sh > jobs.log'):
+            print 'Something went wrong in the jobs submitting!'
+        n_jobs = int(os.popen('wc jobs.log').readline().split()[0])
+        print 'It was submitted %d jobs for %d chunks' % (n_jobs,chunks)
+    else:
+        print 'File "%s" is ready for an execution.' % os.path.abspath('jobs.sh')
+    
     return 0
 
 if __name__=='__main__':
