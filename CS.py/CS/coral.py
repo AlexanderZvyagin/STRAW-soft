@@ -90,6 +90,7 @@ def set_options(options,tags):
                 options[i] = r.group('start')+value+r.group('end')
 
 def main():
+    
     parser = optparse.OptionParser()
     parser.add_option('', '--opt',dest='opt',
                       help='CORAL option file', metavar='FILE')
