@@ -6,7 +6,7 @@ from   CS import *
 
 def main():
 
-    commands = ['db','coral','lsf']
+    commands = ['db','lsf','coral','coral_lsf_jobs']
 
     if len(sys.argv)<=1:
         print
