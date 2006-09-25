@@ -6,15 +6,17 @@ def main():
     parser.usage = 'python lsf.py [options] <coral1.opt> [<coral2.opt> ...]'
     parser.add_option('', '--queue',dest='queue',action='store',
                       help='LSF queue name, type [no-name] for the list of possible queues',
-                      metavar='NAME', type='string')
+                      type='string',metavar='NAME')
     parser.add_option('', '--lsf-opts',dest='opts',
-                      help='List of extra options to be passed to the LSF', type='string')
+                      help='List of extra options to be passed to the LSF', type='string',metavar='OPTIONS')
     parser.add_option('', '--name',dest='name',
-                      help='Job name', type='string')
+                      help='Job name', type='string',metavar='NAME')
     parser.add_option('', '--coral',dest='coral',
-                      help='Path to a CORAL executable.', type='string')
+                      help='Path to a CORAL executable.', type='string',metavar='PATH')
     parser.add_option('', '--output',dest='output',
-                      help='Output castor directory.', type='string')
+                      help='Output castor directory.', type='string',metavar='PATH')
+    parser.add_option('', '--jobs-max',dest='jobs_max',default=999,
+                      help='Maximum number of jobs to submit.', type='int',metavar='number')
 
     (options, args) = parser.parse_args()
 
@@ -26,7 +28,7 @@ def main():
     #    unittest.main()
 
     if options.queue:
-        name = '%s.sh' % options.queue
+        name = 'jobs.sh'
         all_cmds = file(name ,'w')
         os.system('chmod +x %s' % name)
     else:
@@ -34,6 +36,11 @@ def main():
         return 1
 
     for opt in args:
+        options.jobs_max -= 1
+        if options.jobs_max<0:
+            print 'Maximum number of jobs is reached. Stopping.'
+            break
+        
         if not os.access(opt,os.R_OK):
             print 'File %s is not accessable.' % opt
             continue

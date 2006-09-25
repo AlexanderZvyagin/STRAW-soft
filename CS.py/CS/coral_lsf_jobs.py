@@ -10,18 +10,21 @@ def main():
     parser.description = 'Submit CORAL jobs to LSF.'
     parser.long_description = 'The output will be written to '\
                          '<output-dir-prefix>/<run>'
+
+    parser.add_option('', '--test',dest='test',default=False,action='store_true',
+                      help='Test mode (one job, 8nm queue, 10 events)')
     
     (options, args) = parser.parse_args()
 
-    if len(sys.argv)!=6:
+    if len(args)!=5:
         parser.print_help()
         return 1
 
-    coral_dir = sys.argv[1]
-    coral_exe = sys.argv[2]
-    coral_opt = sys.argv[3]
-    output    = sys.argv[4]
-    run       = int(sys.argv[5])
+    coral_dir = args[0]
+    coral_exe = args[1]
+    coral_opt = args[2]
+    output    = args[3]
+    run       = int(args[4])
     run_dir   = os.getcwd()+'/'+str(run)
 
     # First we check for a 'CORAL' environment variable.
@@ -93,7 +96,14 @@ def main():
     chunks = int(os.popen('wc coral_opts.log').readline().split()[0])
     print 'Run %d has %d chunks.' % (run,chunks)
     
-    if os.system('echo cs lsf --queue=1nd --coral=%s --output=%s cdr*.opt' % (coral_exe,output)):
+    if options.test:
+        queue = '8nm'
+        extra = '--jobs-max=1'
+    else:
+        queue = '1nd'
+        extra = ''
+
+    if os.system('cs lsf --queue=%s --coral=%s --output=%s %s cdr*.opt' % (queue,coral_exe,output,extra)):
         print 'Failed to execute the jobs! Why?'
         return 1
     
