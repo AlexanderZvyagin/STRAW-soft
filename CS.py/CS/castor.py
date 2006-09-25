@@ -1,3 +1,4 @@
+from __future__ import generators
 import string,re,os,sys
 
 ##  Dictionary with the CDR file attributes
