@@ -98,8 +98,7 @@ class TestCase(unittest.TestCase):
 def TheTestSuite():
     return unittest.makeSuite(TestCase,'test')
 
-if __name__ == '__main__':
-
+def main():
     parser = optparse.OptionParser()
     parser.add_option('', '--test',action='store_true',dest='test',default=False,
                       help='Run the test suite')
@@ -131,3 +130,6 @@ if __name__ == '__main__':
     if options.run!=None:
         for f in get_run_files(options.run,True,options.dbaccess):
             print f
+
+if __name__ == '__main__':
+    main()
