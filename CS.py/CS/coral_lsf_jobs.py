@@ -26,9 +26,9 @@ def main():
     coral_dir = args[0]
     coral_exe = args[1]
     coral_opt = args[2]
-    output    = args[3]
     run       = int(args[4])
     run_dir   = os.getcwd()+'/'+str(run)
+    output    = args[3]+'/'+str(run)
 
     # First we check for a 'CORAL' environment variable.
     # If it is not available, we set it and run the script again.
@@ -84,7 +84,7 @@ def main():
 
     # Main output directory...
     if os.system('rfmkdir %s' % output):
-        print 'Failed to create the output directory!'
+        print 'Failed to create the output directory: %s' % output
         return 1
 
     shutil.copyfile(coral_opt,'coral.opt')
