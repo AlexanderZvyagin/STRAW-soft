@@ -4,5 +4,6 @@ setup(name='CS',
       author='Alexander Zvyagin',
       author_email='Alexander.Zvyagin@cern.ch',
       version='0.2.0',
-      packages=['CS','CS.STRAW']
+      packages=['CS','CS.STRAW'],
+      scripts=['cs']
       )
