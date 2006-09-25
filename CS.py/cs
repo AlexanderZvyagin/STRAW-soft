@@ -15,16 +15,18 @@ def main():
         print 'For more information type:  $ cs <command> --help'
         print 'List of commands:           %s' % ','.join(commands)
         print
-        sys.exit(1)
+        return 1
     
 
     if sys.argv[1] not in commands:
         print 'Unknown command: %s' % sys.argv[1]
         print 'Known commands are: %s' % ' '.join(commands)
-        sys.exit(1)
+        return 1
 
+    # First argument is not needed.
     del sys.argv[0]
-    getattr(CS,sys.argv[0]).main()
+
+    return getattr(CS,sys.argv[0]).main()
 
 if __name__=='__main__':
-    main()
+    return sys.exit(main())

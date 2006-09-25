@@ -113,6 +113,10 @@ def main():
 
     (options, args) = parser.parse_args()
 
+    if len(sys.argv)<=1:
+        parser.print_help()
+        return 1
+
     if options.test==True:
         unittest.main()
  
@@ -131,5 +135,7 @@ def main():
         for f in get_run_files(options.run,True,options.dbaccess):
             print f
 
+    return 0
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

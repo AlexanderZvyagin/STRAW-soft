@@ -1,10 +1,4 @@
-import re,os,sys
-
-try:
-    import optparse
-except:
-    sys.path.append('/afs/cern.ch/user/z/zviagine/public/local/lib')
-    import optparse
+import re,os,sys,optparse
 
 def main():
     parser = optparse.OptionParser()
@@ -26,7 +20,7 @@ def main():
 
     if len(sys.argv)<=1:
         parser.print_help()
-        return
+        return 1
 
     #if options.test==True:
     #    unittest.main()
@@ -37,7 +31,7 @@ def main():
         os.system('chmod +x %s' % name)
     else:
         os.system('bqueues')
-        return
+        return 1
 
     for opt in args:
         if not os.access(opt,os.R_OK):
@@ -64,5 +58,7 @@ def main():
                 all_cmds.write('-J %s ' % options.name)
             all_cmds.write('%s\n' % script_sh)
 
+    return 0
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

@@ -1,13 +1,5 @@
-import re,os,sys
-
-sys.path.append('/afs/cern.ch/user/z/zvyagin/w0/cs.git')
-import db
-
-try:
-    import optparse
-except:
-    sys.path.append('/afs/cern/ch/user/z/zviagine/public/local/lib')
-    import optparse
+import re,os,sys,optparse
+from CS import db
 
 def read_coral_options_file(f):
     """Read an option file resolving 'include' directives"""
@@ -109,7 +101,7 @@ def main():
 
     if len(sys.argv)<=1:
         parser.print_help()
-        return
+        return 1
 
     #if options.test==True:
     #    unittest.main()
@@ -167,6 +159,7 @@ def main():
 
             print fname
 
+    return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
