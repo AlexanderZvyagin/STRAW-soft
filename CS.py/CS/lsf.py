@@ -50,17 +50,17 @@ def main():
         script_sh = os.getcwd()+'/'+name+'.sh'
         script = file(script_sh,'w')
         os.system('chmod +x %s' % script_sh)
-        coral_run = '%s %s' % (options.coral,os.path.abspath(opt))        
+        coral_run = '%s %s > /tmp/%s.log 2>&1' % (options.coral,os.path.abspath(opt),name)
         script.write(coral_run + '\n\n')
 
-        for f in [ ('mDST-','.root'), ('','.root'), ('','.gfile')]:
+        for f in [ ('mDST-','.root'), ('','.root'), ('','.gfile'), ('','.log')]:
             f_in  = '/tmp/%s%s%s' % (f[0],name,f[1])
             f_out = '%s/%s%s%s' % (options.output,f[0],name,f[1])
             script.write( 'rfcp %s %s\n' % (f_in,f_out))
             script.write('rm -f %s\n' % f_in)
 
         if options.queue:
-            all_cmds.write('bsub -q %s -oo %s.log ' % (options.queue,name) )
+            all_cmds.write('bsub -q %s -oo lsf-%s.log ' % (options.queue,name) )
             if options.name:
                 all_cmds.write('-J %s ' % options.name)
             all_cmds.write('%s\n' % script_sh)
