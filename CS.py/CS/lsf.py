@@ -14,7 +14,7 @@ def main():
     parser.add_option('', '--coral',dest='coral',
                       help='Path to a CORAL executable.', type='string',metavar='PATH')
     parser.add_option('', '--output',dest='output',
-                      help='Output castor directory.', type='string',metavar='PATH')
+                      help='Output (castor) directory.', type='string',metavar='PATH')
     parser.add_option('', '--jobs-max',dest='jobs_max',default=999,
                       help='Maximum number of jobs to submit.', type='int',metavar='number')
 
@@ -34,6 +34,11 @@ def main():
     else:
         os.system('bqueues')
         return 1
+
+    if options.output[:8]=='/castor/':
+        cp_command = 'rfcp'
+    else:
+        cp_command = 'cp'
 
     for opt in args:
         options.jobs_max -= 1
@@ -55,8 +60,8 @@ def main():
 
         for f in [ ('mDST-','.root'), ('','.root'), ('','.gfile'), ('','.log')]:
             f_in  = '/tmp/%s%s%s' % (f[0],name,f[1])
-            f_out = '%s/%s%s%s' % (options.output,f[0],name,f[1])
-            script.write( 'rfcp %s %s\n' % (f_in,f_out))
+            f_out = '%s/%s%s%s' % (os.path.abspath(options.output),f[0],name,f[1])
+            script.write( '%s %s %s\n' % (cp_command,f_in,f_out))
             script.write('rm -f %s\n' % f_in)
 
         if options.queue:

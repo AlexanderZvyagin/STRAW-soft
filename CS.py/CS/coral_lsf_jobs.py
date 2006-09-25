@@ -78,26 +78,30 @@ def main():
 
     print 'Creating output directories...'
 
+    # Create directory for temporary files
+    os.mkdir(run_dir)
+    os.chdir(run_dir)
+
     # Main output directory...
     if os.system('rfmkdir %s' % output):
         print 'Failed to create the output directory!'
         return 1
-    
-    # Create directory for temporary files
-    os.mkdir(run_dir)
-    os.chdir(run_dir)
-    
+
     shutil.copyfile(coral_opt,'coral.opt')
     if os.system('grep \?\?\?DATA\?\?\? coral.opt > /dev/null'):
         print 'Bad options file (no data tag ???DATA??? is found).'
         return 1
 
-    print 'Getting run data files and generating the CORAL option files...'
+    print 'Getting run data files and generating the CORAL options files...'
     sys.stdout.flush()
-    if os.system('cs coral --run=%d --opt=coral.opt > coral_opts.log ' % run):
+    if options.test:
+        events = '--events=10'
+    else:
+        events = '' # Use default number
+    if os.system('cs coral --run=%d --opt=coral.opt %s > coral_opts.log ' % (run,events) ):
         return 1
     chunks = int(os.popen('wc coral_opts.log').readline().split()[0])
-    print 'Run %d has %d chunks.' % (run,chunks)
+    print 'Run %d has %d chunk(s).' % (run,chunks)
     
     if options.test:
         queue = '8nm'
@@ -114,7 +118,7 @@ def main():
         if os.system('./jobs.sh > jobs.log'):
             print 'Something went wrong in the jobs submitting!'
         n_jobs = int(os.popen('wc jobs.log').readline().split()[0])
-        print 'It was submitted %d jobs for %d chunks' % (n_jobs,chunks)
+        print 'It were submitted %d job(s) out of %d chunk(s).' % (n_jobs,chunks)
     else:
         print 'File "%s" is ready for an execution.' % os.path.abspath('jobs.sh')
     
