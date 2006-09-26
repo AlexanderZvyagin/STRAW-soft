@@ -1,6 +1,17 @@
 from __future__ import generators
 import string,re,os,sys
 
+##  Get list of files with given pattern (regular expression)
+def castor_files(directory,pattern=None):
+    if os.system('rfstat %s > /dev/null 2>&1' % directory):
+        return
+    for f in os.popen('rfdir ' + directory):
+        name=f.strip().split()[-1]
+        if pattern:
+            r = re.match(pattern,name)
+            if not r:  continue
+        yield os.path.join(directory,name)
+
 ##  Dictionary with the CDR file attributes
 #
 def file_cdr(d,f):
@@ -158,7 +169,47 @@ def TheTestSuite():
 ### The main program
 ########################################################################
 
+def main():
+
+    import optparse
+
+    commands = ['ls']
+
+    parser = optparse.OptionParser()
+    parser.description = 'CASTOR file system utilities'
+    parser.usage = '%prog <command> [options]\n' \
+                   '  type "%prog <command>" for more help.\n' \
+                   '  List of available commands: ' + ','.join(commands)
+
+    parser.add_option('', '--pattern',dest='pattern',default=None,
+                      help='Pattern (regular expression) for files.', type='string', metavar='reg-expr')
+
+    #parser.add_option('', '--test',dest='test',default=False,action='store_true',
+    #                  help='Run a test suit', type='string')
+    
+    (options, args) = parser.parse_args()
+
+    #if options.test:
+    #    print 'Running the test suit'
+    #    return unittest.main()
+
+    if not args:
+        parser.print_help()
+        return 1
+
+    if args[0]=='ls':
+        del args[0]
+        if len(args)==0:
+            print 'Usage: castor ls [--pattern=<reg.expr>] <dir> [<dir> ....]'
+            return 1
+        for d in args:
+            for f in castor_files(d,options.pattern):
+                print f
+        return 0
+
+    print 'Unknwon command: %s' % args[0]
+    print 'Possible commands are: %s' % ','.join(commands)
+    return 1
+
 if __name__ == '__main__':
-    print 'This module is not callable.'
-    print 'Running self-test...'
-    unittest.main()
+    sys.exit(main())
