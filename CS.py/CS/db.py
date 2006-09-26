@@ -99,7 +99,13 @@ def TheTestSuite():
     return unittest.makeSuite(TestCase,'test')
 
 def main():
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(version='1.0.1')
+
+    parser.usage = 'cs %prog <options>\n'\
+                   'Author: Alexander.Zvyagin@cern.ch'
+
+    parser.description = 'Run different DB-related commands.'
+
     parser.add_option('', '--test',action='store_true',dest='test',default=False,
                       help='Run the test suite')
     parser.add_option('', '--run',dest='run',

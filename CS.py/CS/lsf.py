@@ -1,9 +1,10 @@
 import re,os,sys,optparse
 
 def main():
-    parser = optparse.OptionParser()
-    parser.description = 'Run LSF jobs.'
-    parser.usage = 'python lsf.py [options] <coral1.opt> [<coral2.opt> ...]'
+    parser = optparse.OptionParser(version='1.0.0')
+    parser.description = 'Prepare LSF jobs to start.'
+    parser.usage = 'cs %prog [options] <coral1.opt> [<coral2.opt> ...]\n'\
+                   'Author: Alexander.Zvyagin@cern.ch'
     parser.add_option('', '--queue',dest='queue',action='store',
                       help='LSF queue name, type [no-name] for the list of possible queues',
                       type='string',metavar='NAME')

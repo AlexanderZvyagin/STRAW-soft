@@ -83,7 +83,14 @@ def set_options(options,tags):
 
 def main():
     
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(version='1.0.0')
+
+    parser.description = 'Create CORAL option files from a given template option file '\
+                         'for a given run number. The script will create one '\
+                         'option file per chunk.'
+    parser.usage = 'cs %prog <options>\n'\
+                   'Author: Alexander.Zvyagin@cern.ch'
+
     parser.add_option('', '--opt',dest='opt',
                       help='CORAL option file', metavar='FILE')
     parser.add_option('', '--run',dest='run',

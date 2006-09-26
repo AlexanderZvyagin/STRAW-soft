@@ -1,32 +1,46 @@
 #!/bin/env python
 
-import sys
+import sys,optparse,os
 import CS
 from   CS import *
+from   CS.colors import *
 
 def main():
 
-    commands = ['db','lsf','coral','coral_lsf_jobs']
+    commands = ['db','lsf','coral','castor','coral_lsf_jobs','phast_merge','coral_log']
 
-    if len(sys.argv)<=1:
-        print
-        print 'Run different COMPASS-SOFT related scripts'
-        print 'USAGE:                      $ cs <command> [arguments]'
-        print 'For more information type:  $ cs <command> --help'
-        print 'List of commands:           %s' % ','.join(commands)
-        print
-        return 1
+    if len(sys.argv)>1 and sys.argv[1] in commands:
+        # Normal execution!
+        del sys.argv[0]
+        return getattr(CS,sys.argv[0]).main()
+
+    parser = optparse.OptionParser(version='1.0.2')
+
+    parser.description = BOLD+BLUE+'Run different COMPASS-soft related scripts. '+RESET
+    parser.usage = '%prog <command> [arguments] \n' \
+                   '  Commands: '+BOLD+GREEN+','.join(commands)+RESET+'\n' \
+                   '  Type "'+BOLD+'cs <command>'+RESET+'" for help.\n\n' \
+                   'Author: Alexander.Zvyagin@cern.ch'
     
+    parser.add_option('', '--versions',dest='versions',default=False,action='store_true',
+                      help='Print versions of all commands')
+    
+    (options, args) = parser.parse_args()
 
-    if sys.argv[1] not in commands:
-        print 'Unknown command: %s' % sys.argv[1]
-        print 'Known commands are: %s' % ' '.join(commands)
+    if options.versions:
+        del sys.argv[0]
+        print '%-20s %s' % ('cs',parser.version)
+        for c in commands:
+            sys.argv=[c,'--version']
+            ver = os.popen('cs %s --version' % c).readlines()[0].strip()
+            print '%-20s %s' % (c,ver)
         return 1
 
-    # First argument is not needed.
-    del sys.argv[0]
+    parser.print_help()
 
-    return getattr(CS,sys.argv[0]).main()
+    if len(sys.argv)>1:
+        print 'Unknown command: %s' % sys.argv[1]
+    return 1
 
 if __name__=='__main__':
     sys.exit(main())

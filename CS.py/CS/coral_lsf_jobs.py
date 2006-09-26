@@ -1,59 +1,14 @@
 # @brief Submit CORAL jobs to LSF
 
 import os,sys,optparse,shutil,re
-
-BLACK = '\033[30m'
-RED = '\033[31m'
-GREEN = '\033[32m'
-YELLOW = '\033[33m'
-BLUE = '\033[34m'
-MAGENTA = '\033[35m'
-CYAN = '\033[36m'
-WHITE = '\033[37m'
-
-RESET = '\033[0;0m'
-BOLD = '\033[1m'
-REVERSE = '\033[2m'
-
-BLACKBG = '\033[40m'
-REDBG = '\033[41m'
-GREENBG = '\033[42m'
-YELLOWBG = '\033[43m'
-BLUEBG = '\033[44m'
-MAGENTABG = '\033[45m'
-CYANBG = '\033[46m'
-WHITEBG = '\033[47m'
-
-def no_colors():
-    global BLACK,RED,GREEN,YELLOW,BLUE,MAGENTA,CYAN,WHITE,RESET,BOLD,REVERSE
-    global BLACKBG,REDBG,GREENBG,YELLOWBG,BLUEBG,MAGENTABG,CYANBG,WHITEBG
-
-    BLACK = ''
-    RED = ''
-    GREEN = ''
-    YELLOW = ''
-    BLUE = ''
-    MAGENTA = ''
-    CYAN = ''
-    WHITE = ''
-    RESET = ''
-    BOLD = ''
-    REVERSE = ''
-
-    BLACKBG = ''
-    REDBG = ''
-    GREENBG = ''
-    YELLOWBG = ''
-    BLUEBG = ''
-    MAGENTABG = ''
-    CYANBG = ''
-    WHITEBG = ''
+from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(version='1.0.0')
 
-    parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>'
+    parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
+                   'Author: Alexander.Zvyagin@cern.ch'
     parser.description = 'Submit CORAL jobs to LSF.'
     parser.long_description = 'The output will be written to '\
                          '<output-dir-prefix>/<run>'
@@ -69,7 +24,7 @@ def main():
 
     parser.add_option('', '--noterm',dest='noterm',default=False,action='store_true',
                       help='Do not use fancy output (terminal properties).')
-    
+
     (options, args) = parser.parse_args()
 
     if len(args)!=5:
@@ -90,7 +45,7 @@ def main():
         terminal = term.TerminalController()
     except:
         terminal = None
-        no_colors()
+        colors_disable()
 
 
     # First we check for a 'CORAL' environment variable.
@@ -118,10 +73,8 @@ def main():
         commands.append('exit')
         
         bash_run = 'bash -c "%s"' % ' && '.join(commands)
-        print '******************************'
-        print '*** Executing the command: ***'
+        print '*** Executing the command:'
         print BOLD+BLUE+bash_run+RESET
-        print '******************************'
 
         return os.system(bash_run)
     else:

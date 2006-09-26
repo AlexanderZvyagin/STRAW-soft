@@ -175,11 +175,12 @@ def main():
 
     commands = ['ls']
 
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(version='1.0.0')
     parser.description = 'CASTOR file system utilities'
-    parser.usage = '%prog <command> [options]\n' \
-                   '  type "%prog <command>" for more help.\n' \
-                   '  List of available commands: ' + ','.join(commands)
+    parser.usage = 'cs %prog <command> [options]\n' \
+                   '  Type "%prog <command>" for more help.\n' \
+                   '  List of available commands: ' + ','.join(commands)+'\n'\
+                   'Author: Alexander.Zvyagin@cern.ch'
 
     parser.add_option('', '--pattern',dest='pattern',default=None,
                       help='Pattern (regular expression) for files.', type='string', metavar='reg-expr')
