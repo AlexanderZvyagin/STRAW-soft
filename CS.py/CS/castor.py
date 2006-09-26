@@ -184,6 +184,9 @@ def main():
     parser.add_option('', '--pattern',dest='pattern',default=None,
                       help='Pattern (regular expression) for files.', type='string', metavar='reg-expr')
 
+    parser.add_option('', '--sep',dest='sep',default='EndOfLine',
+                      help='Files separation symbol', type='string', metavar='symbol')
+
     #parser.add_option('', '--test',dest='test',default=False,action='store_true',
     #                  help='Run a test suit', type='string')
     
@@ -197,14 +200,19 @@ def main():
         parser.print_help()
         return 1
 
+    if options.sep=='EndOfLine':
+        options.sep = '\n'
+
     if args[0]=='ls':
         del args[0]
         if len(args)==0:
-            print 'Usage: castor ls [--pattern=<reg.expr>] <dir> [<dir> ....]'
+            print 'Usage: castor ls [options] <dir> [<dir> ....]'
             return 1
+        files=[]
         for d in args:
             for f in castor_files(d,options.pattern):
-                print f
+                files.append(f)
+        print options.sep.join(files)
         return 0
 
     print 'Unknwon command: %s' % args[0]
