@@ -5,7 +5,7 @@ from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser(version='1.0.0')
+    parser = optparse.OptionParser(version='1.0.1')
 
     parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -140,7 +140,7 @@ def main():
     if options.submit:
         n_jobs = 0
         if terminal:
-            progress = term.ProgressBar(terminal, 'Submitting LSF jobs for run %d' % run)
+            progress = term.ProgressBar(terminal, 'Submitting %d LSF jobs for run %d' % (chunks,run))
         for l in file('jobs.sh').readlines():
             job = l.strip()
             r = re.match('.*cdr(?P<cdr>\d+).*',job)
@@ -151,7 +151,7 @@ def main():
             if terminal:
                 progress.update(float(n_jobs)/chunks, 'Chunk %s' % name)
             n_jobs += 1
-            if os.system('echo %s > /dev/null' % job):
+            if os.system('%s > /dev/null' % job):
                 print RED,BOLD,'Something went wrong in the job submitting!',RESET
                 break
         if terminal:
