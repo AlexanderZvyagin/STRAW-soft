@@ -3,10 +3,10 @@ from CS import db,castor
 from CS.colors import *
 
 def main():
-    parser = optparse.OptionParser(version='1.0.0')
+    parser = optparse.OptionParser(version='1.0.1')
     parser.add_option('', '--phast',dest='phast',default='phast',
                       help='Path to PHAST program', metavar='PATH')
-    parser.add_option('', '--phast-opts',dest='phast_opts',default='-D1 -m',
+    parser.add_option('', '--phast-opts',dest='phast_opts',default='-D1 -m -f',
                       help='PHAST options', type='string', metavar='OPTS')
 
     parser.usage = '%prog [options] <mDST dir> [<mDST dir2> ...]\n' \
@@ -22,6 +22,12 @@ def main():
 
     for d in args:
         files = []
+        print BLUE+BOLD+('Working in %s'%d)+RESET
+        print RED+BOLD+'Removing previous PHAST merged files.'+RESET
+        for f in castor.castor_files(d,'^mDST-\d+\.root(\.\d\d){0,1}$'):
+            os.system('rfrm %s' % f)
+
+        print 'Geting the list of files...'
         for f in castor.castor_files(d,'mDST.*\.root'):
             if not files:
                 # Get run number from file name
