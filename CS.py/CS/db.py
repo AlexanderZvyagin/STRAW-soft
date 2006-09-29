@@ -43,7 +43,7 @@ def run_info_db(run,dbhost='lxfs1657.cern.ch'):
     for k,v in data.items():
         print "%11s  %s"%(k,v)
 
-def cdr_files_to_db(years=[],auto_delete=False):
+def cdr_files_to_db(years=[],auto_delete=False,remove_test=True):
     import castor
     db = DataBaseMySQL('na58pc052.cern.ch','compass','HMcheops')
 
@@ -62,6 +62,10 @@ def cdr_files_to_db(years=[],auto_delete=False):
                 db.send('DROP TABLE IF EXISTS %s' % t)
         else:
             print 'OK! Keeping it.'
+    
+    if remove_test:
+        # Remove 'test' files:
+        db.send("delete from run.files where file like '%%/test/%%'")
     
     db.send(r"CREATE TABLE IF NOT EXISTS %s  (`run` INT,`feor` INT,`size` INT,`file` VARCHAR(222), PRIMARY KEY(file)) TYPE=MyISAM;" % tables[0])
     db.send(r"CREATE TABLE IF NOT EXISTS %s  (`run` INT,`year` INT,`period` VARCHAR(11), PRIMARY KEY(run)) TYPE=MyISAM;" % tables[1])
@@ -99,7 +103,7 @@ def TheTestSuite():
     return unittest.makeSuite(TestCase,'test')
 
 def main():
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.1.0')
 
     parser.usage = 'cs %prog <options>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -112,10 +116,10 @@ def main():
                       help='Run number', type='int')
     parser.add_option('', '--db-access',dest='dbaccess',default='-hna58pc052.cern.ch -uanonymous',
                       help='DB access options (ex: -hhost -ume -ppass)', type='string')
-    parser.add_option('', '--castor-scan',dest='castor',
-                      help='Scan castor files for given years. (Example: 2002,2004,2006)')
-    parser.add_option('', '--castor2db',dest='castor2db',action='store_true',default=False,
-                      help='Put castor files infor to DB.')
+    parser.add_option('', '--castor-scan',dest='castor',metavar='year(s)',
+                      help='Scan castor files for given years. (Example: 2002,2004,2006)',type='string')
+    parser.add_option('', '--castor2db',dest='castor2db',metavar='year(s)',
+                      help='Put castor files info to DB for given year(s). Example: 2002,2003,2004,2006',type='string')
 
     (options, args) = parser.parse_args()
 
@@ -128,18 +132,19 @@ def main():
  
     if options.castor:
         import castor
-        years=[]
         for y in options.castor.split(','):
-            years.append(int(y))
-        for f in castor.cdr_files(years):
-            print f
+            castor.cdr_files([y])
+            return 0
 
     if options.castor2db:
-        cdr_files_to_db([2006])
+        for run in options.castor2db.split(','):
+            cdr_files_to_db([int(run)])
+        return 0
 
     if options.run!=None:
         for f in get_run_files(options.run,True,options.dbaccess):
             print f
+        return 0
 
     return 0
 
