@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <cmath>
 
 #include "TMinuit.h"
 #include "TTree.h"
@@ -946,7 +947,7 @@ void VS::CalculateRT2(V::VFitResult &result)
     me = this;
     _res_ = &result;
 
-    arglist[0] = 2000;
+    arglist[0] = 5000;
     //minuit.mnexcm("SIMPLE", arglist ,1,ierflg);
     minuit.mnexcm("MINIMIZE", arglist ,1,ierflg);
     //minuit.mnmnos();
@@ -1003,7 +1004,6 @@ void VS::CalculateRT2(V::VFitResult &result)
     // Write the report.
     canvas->Write();
     canvas->Print("",".eps");
-    delete canvas;  // release the memory.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1100,16 +1100,24 @@ void VS::VFit(VFitResult &result)
     double f_min,par, err;
 
     minuit.mnstat(f_min,par,par,ierflg,ierflg,ierflg);
-    result.xi2 = f_min;
 
-    minuit.GetParameter(1,par,err);
-    result.t0=par;
-    result.t0_err=err;
-    result.rt->SetT0(result.t0);
+    if( !isnan(f_min) )
+    {
+        result.xi2 = f_min;
 
-    minuit.GetParameter(0,par,err);
-    result.w0=par;
-    result.w0_err=err;
+        minuit.GetParameter(1,par,err);
+        result.t0=par;
+        result.t0_err=err;
+        result.rt->SetT0(result.t0);
+
+        minuit.GetParameter(0,par,err);
+        result.w0=par;
+        result.w0_err=err;
+    }
+    else
+    {
+        // Fit failed!
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
