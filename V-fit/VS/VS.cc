@@ -140,7 +140,7 @@ void f_space(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
         }
     }
     
-    fr /= n;
+    fr /= n+0.001;
     
     if( _res_->V_fit_max_points )
         fr *= 1 +
