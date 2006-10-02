@@ -3,7 +3,7 @@ from CS import db,castor
 from CS.colors import *
 
 def main():
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.0.2')
     parser.add_option('', '--phast',dest='phast',default='phast',
                       help='Path to PHAST program', metavar='PATH')
     parser.add_option('', '--phast-opts',dest='phast_opts',default='-D1 -m -f',
@@ -28,6 +28,7 @@ def main():
             os.system('rfrm %s' % f)
 
         print 'Geting the list of files...'
+        run = None
         for f in castor.castor_files(d,'mDST.*\.root'):
             if not files:
                 # Get run number from file name
@@ -37,6 +38,12 @@ def main():
                     return 1
                 run = int(r.group('run'))
             files.append(f)
+
+        if len(files)==0:
+            print RED+BOLD+'No files are found!'+RESET
+            return 1
+
+        assert (run!=None)
 
         command  = options.phast + ' ' + options.phast_opts
         command += ' -o %s/mDST-%d.root -h %s/hist-%d.root ' % (d,run,d,run)
