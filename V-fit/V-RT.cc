@@ -5,16 +5,10 @@
 
 #include "TROOT.h"
 #include "TFile.h"
-#include "TH2.h"
-#include "TMinuit.h"
 #include "TRint.h"
-#include "TGraph.h"
-#include "TTree.h"
-#include "TChain.h"
-#include "TCanvas.h"
-#include "TF1.h"
 #include "TStyle.h"
-#include "TSQLServer.h"
+#include "TH1.h"
+#include "TCanvas.h"
 
 #include "Detectors/s_stream.h"
 #include "V.h"
@@ -132,7 +126,7 @@ int main(int argc,const char *argv[])
 {
     try
     {
-        int ac=0, graphics=0;
+        int ac=0;
         char *av[]={"NULL"}; 
 
         struct poptOption options[] =
@@ -155,8 +149,6 @@ int main(int argc,const char *argv[])
                                           "Signal propagation velocity. Use 0, if you don't want to use it.", "FLOAT" },
             { "cuts",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &cuts,        0,
                                           "Extra cuts to be used in events selection.", "STRING" },
-            { "graphics",   '\0', POPT_ARG_NONE,  &graphics,    0,
-                                          "Run the program with grpahics", "" },
             POPT_AUTOHELP
             POPT_TABLEEND
         };
@@ -188,8 +180,7 @@ int main(int argc,const char *argv[])
             return 1;
         }
 
-        if( !graphics )
-            gROOT->SetBatch();
+        gROOT->SetBatch();
 
         gStyle->SetOptFit(1);
         gStyle->SetStatFormat("8.6g");
@@ -226,7 +217,6 @@ int main(int argc,const char *argv[])
         printf("Starting t0 for the fit ......... %g\n", t0_start);
         printf("Starting w0 for the fit ......... %g\n", w0_start);
         printf("cuts ............................ %s\n", cuts);
-        printf("graphics ........................ %s\n", graphics?"ON":"OFF");
 
         RT_fit();
         
