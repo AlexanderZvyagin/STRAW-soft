@@ -113,7 +113,6 @@ def cdr_files_2006(printout=0):
     lst=[]
     for i in range(0,55):
         lst.append('T%2.2d'%i)
-    for i in range(21,55):
         lst.append('W%2.2d'%i)
     lst.append('test')
 
@@ -175,7 +174,7 @@ def main():
 
     commands = ['ls']
 
-    parser = optparse.OptionParser(version='1.0.0')
+    parser = optparse.OptionParser(version='1.0.1')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
