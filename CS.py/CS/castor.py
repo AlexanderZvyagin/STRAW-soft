@@ -1,6 +1,43 @@
 from __future__ import generators
 import string,re,os,sys
 
+def path_stat(path):
+    stat={}
+    for l in os.popen('rfstat %s 2>&1' % path).readlines():
+        r = re.match('Protection\s+:\s+(?P<protection>[\w-]+)\s+.*',l)
+        if r:
+            return r.group('protection')[0]
+    return None
+
+def copy(src,dst,move=False):
+    print 'copy: %s %s' % (src,dst)
+    if path_stat(src)=='-':
+        res = os.system('rfcp %s %s' % (src,dst) )
+        if res==0 and move:
+            os.system('rfrm %s' % src)
+
+    elif path_stat(src)=='d':
+        if path_stat(dst)=='-':
+            raise "copy: I don't want to copy directory to a file %s" % dst
+        elif path_stat(dst)==None:
+            res = os.system('rfmkdir %s' % dst)
+            if res:
+                # Error!
+                return res
+
+        for f in castor_files(src):
+            name = os.path.split(f)[1]
+            if name in ['.','..']:
+                continue
+            res = copy(f,dst+'/'+name,move)
+            if res:
+                return res
+
+        if move:
+            os.system('rfrm -r %s' % src)
+
+        return 0
+
 ##  Get list of files with given pattern (regular expression)
 def castor_files(directory,pattern=None):
     if os.system('rfstat %s > /dev/null 2>&1' % directory):
@@ -172,9 +209,9 @@ def main():
 
     import optparse
 
-    commands = ['ls']
+    commands = ['ls','cp','mv']
 
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.1.0')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
@@ -213,6 +250,16 @@ def main():
             for f in castor_files(d,options.pattern):
                 files.append(f)
         print options.sep.join(files)
+        return 0
+
+    if args[0] in ['cp','mv']:
+        move = args[0]=='mv'
+        del args[0]
+        if len(args)!=2:
+            print 'Usage: castor cp <src> <dst>'
+            print 'Usage: castor mv <src> <dst>'
+            return 1
+        copy(args[0],args[1],move)
         return 0
 
     print 'Unknwon command: %s' % args[0]
