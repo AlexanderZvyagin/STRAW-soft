@@ -128,7 +128,7 @@ void db_write_current(TSQLServer *db,const char *file_name)
         // Decode DCS module and channel
         if( 3!=sscanf(dcs_name,"dcs%d:Module%d.Channel%d",&dcs,&dcs_module,&dcs_channel) )
         {
-            printf("Can not read dcs channel information.\n");
+            printf("Can not read dcs channel information: %s\n",dcs_name);
             continue;
         }
 
@@ -139,7 +139,7 @@ void db_write_current(TSQLServer *db,const char *file_name)
             continue;
         }
 
-        sprintf(buf,"INSERT INTO dcs.current (time,dcs_module,dcs_channel,DL,detector,channel,current) VALUES(%s,%d,%d,%d,'%s','%s',%g);",
+        sprintf(buf,"REPLACE INTO dcs.current (time,dcs_module,dcs_channel,DL,detector,channel,current) VALUES(%s,%d,%d,%d,'%s','%s',%g);",
                 timestamp,dcs_module,dcs_channel,DL,detector,detector_channel,current);
         if( !db->Query(buf) )
             printf("**** FAILED: %s\n",buf);
@@ -206,7 +206,7 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         else
             printf("Can not decode name: %s\n",channel_name);
         
-        sprintf(buf,"INSERT INTO dcs.Temperature (time,detector,sensor,temperature) VALUES(%s,'%s','%s',%g);",
+        sprintf(buf,"REPLACE INTO dcs.Temperature (time,detector,sensor,temperature) VALUES(%s,'%s','%s',%g);",
                 timestamp,detector,sensor,temperature);
         if( !db->Query(buf) )
             printf("**** FAILED: %s\n",buf);
@@ -256,15 +256,15 @@ void db_write_hall_pressure_temperature(TSQLServer *db,const char *file_name)
         sprintf(timestamp,"%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d",year,month,day,hour,min,sec);
 
         if( 0==strcmp(dcs_name,"Patm_hall") )
-            sprintf(buf,"INSERT INTO dcs.Hall_pressure (time,pressure) VALUES(%s,%g);",
+            sprintf(buf,"REPLACE INTO dcs.Hall_pressure (time,pressure) VALUES(%s,%g);",
                     timestamp,v);
         else
         if( 0==strcmp(dcs_name,"AirTemp") )
-            sprintf(buf,"INSERT INTO dcs.Hall_temperature (time,temperature) VALUES(%s,%g);",
+            sprintf(buf,"REPLACE INTO dcs.Hall_temperature (time,temperature) VALUES(%s,%g);",
                     timestamp,v);
         else
         if( 0==strcmp(dcs_name,"Hum1_HAll") )
-            sprintf(buf,"INSERT INTO dcs.Hall_humidity (time,humidity) VALUES(%s,%g);",
+            sprintf(buf,"REPLACE INTO dcs.Hall_humidity (time,humidity) VALUES(%s,%g);",
                     timestamp,v);
         else
         {
