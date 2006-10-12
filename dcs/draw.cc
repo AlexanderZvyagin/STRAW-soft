@@ -27,7 +27,7 @@ void draw_text(char *prefix,float p,float x,float y)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fill_pad(TVirtualPad *pad, const char *channel, float p1, float p2, int trips)
+void fill_pad(TVirtualPad *pad, const char *channel, float v_ok, float v_low, int trips)
 {
     pad->cd();
     
@@ -35,9 +35,9 @@ void fill_pad(TVirtualPad *pad, const char *channel, float p1, float p2, int tri
     txt->SetTextSize(0.22);
     txt->Draw();
     
-    draw_text("V ",p1,0.05,0.4);
-    draw_text("- ",p2,0.55,0.4);
-    draw_text("x ",1-p1-p2,0.05,0.1);
+    draw_text("V ",v_ok,0.05,0.4);
+    draw_text("- ",v_low,0.55,0.4);
+    draw_text("x ",1-v_ok-v_low,0.05,0.1);
     
     char buff[555];
     sprintf(buff," # %d",trips);
@@ -46,13 +46,13 @@ void fill_pad(TVirtualPad *pad, const char *channel, float p1, float p2, int tri
     text->SetTextSize(0.22);
     text->Draw();
 
-    if(p1==1 && trips==0)
+    if(v_ok>0.999 && trips==0)
         pad->SetFillColor(3);    //Fill the box green
-    else if(p2==1 && trips==0)
+    else if(v_low>0.999 && trips==0)
         pad->SetFillColor(7);    //Fill the box blue
-    else if(p1>=0.97 && (p1+p2)>=0.99)
+    else if(v_ok>=0.97 && (v_ok+v_low)>=0.99)
         pad->SetFillColor(5);   //Fill the box yellow
-    else if(p1<=0.97 && (p1+p2)>=0.99)
+    else if(v_ok<=0.97 && (v_ok+v_low)>=0.99)
         pad->SetFillColor(41);   //Fill the box (dirty) yellow
     else
         pad->SetFillColor(2);    //Fill the box red
