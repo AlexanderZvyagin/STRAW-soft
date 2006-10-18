@@ -5,7 +5,7 @@ from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.0.3')
 
     parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -18,6 +18,9 @@ def main():
 
     parser.add_option('', '--submit',dest='submit',default=False,action='store_true',
                       help='Submit jobs at the end!')
+
+    parser.add_option('', '--njobs',dest='njobs',default=9999,
+                      help='Maximum number of jobs to submit.')
 
     parser.add_option('', '--rm',dest='rm',default=False,action='store_true',
                       help='Remove output directory (if they exist)')
@@ -109,6 +112,7 @@ def main():
     if os.system('rfmkdir %s' % output):
         print 'Failed to create the output directory: %s' % output
         return 1
+    os.system('rfcp %s %s/coral.opt' % (coral_opt,output))
 
     shutil.copyfile(coral_opt,'coral.opt')
     if os.system('grep \?\?\?DATA\?\?\? coral.opt > /dev/null'):
@@ -139,9 +143,14 @@ def main():
     
     if options.submit:
         n_jobs = 0
+        if options.njobs<chunks:
+            chunks=options.njobs
         if terminal:
             progress = term.ProgressBar(terminal, 'Submitting %d LSF jobs for run %d' % (chunks,run))
         for l in file('jobs.sh').readlines():
+            if n_jobs>=chunks:
+                break
+
             job = l.strip()
             r = re.match('.*cdr(?P<cdr>\d+).*',job)
             if not r:
