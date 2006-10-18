@@ -16,9 +16,8 @@ def copy(src,dst,move=False):
             os.system('rfrm %s' % src)
 
     elif path_stat(src)=='d':
-        #if path_stat(dst)=='-':
-        #    raise "copy: I don't want to copy directory to a file %s" % dst
-        #elif path_stat(dst)==None:
+        if path_stat(dst)=='-':
+            raise "copy: I don't want to copy directory to a file %s" % dst
         dst = dst+'/'+os.path.split(src)[1]
         res = os.system('rfmkdir %s' % dst )
         if res:
