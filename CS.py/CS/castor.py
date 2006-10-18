@@ -10,6 +10,7 @@ def path_stat(path):
     return None
 
 def copy(src,dst,move=False):
+    print src,'==>>',dst
     if path_stat(src)=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
         if res==0 and move:
@@ -210,7 +211,7 @@ def main():
 
     commands = ['ls','cp','mv']
 
-    parser = optparse.OptionParser(version='1.1.0')
+    parser = optparse.OptionParser(version='1.1.1')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
