@@ -10,20 +10,20 @@ def path_stat(path):
     return None
 
 def copy(src,dst,move=False):
-    print 'copy: %s %s' % (src,dst)
     if path_stat(src)=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
         if res==0 and move:
             os.system('rfrm %s' % src)
 
     elif path_stat(src)=='d':
-        if path_stat(dst)=='-':
-            raise "copy: I don't want to copy directory to a file %s" % dst
-        elif path_stat(dst)==None:
-            res = os.system('rfmkdir %s' % dst)
-            if res:
-                # Error!
-                return res
+        #if path_stat(dst)=='-':
+        #    raise "copy: I don't want to copy directory to a file %s" % dst
+        #elif path_stat(dst)==None:
+        dst = dst+'/'+os.path.split(src)[1]
+        res = os.system('rfmkdir %s' % dst )
+        if res:
+            # Error!
+            return res
 
         for f in castor_files(src):
             name = os.path.split(f)[1]
