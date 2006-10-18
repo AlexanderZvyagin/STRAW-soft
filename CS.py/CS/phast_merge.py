@@ -3,10 +3,10 @@ from CS import db,castor
 from CS.colors import *
 
 def main():
-    parser = optparse.OptionParser(version='1.0.2')
+    parser = optparse.OptionParser(version='1.0.3')
     parser.add_option('', '--phast',dest='phast',default='phast',
                       help='Path to PHAST program', metavar='PATH')
-    parser.add_option('', '--phast-opts',dest='phast_opts',default='-D1 -m -f',
+    parser.add_option('', '--phast-opts',dest='phast_opts',default='-D7 -m -f',
                       help='PHAST options', type='string', metavar='OPTS')
 
     parser.usage = '%prog [options] <mDST dir> [<mDST dir2> ...]\n' \
