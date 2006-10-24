@@ -83,7 +83,7 @@ def set_options(options,tags):
 
 def main():
     
-    parser = optparse.OptionParser(version='1.0.0')
+    parser = optparse.OptionParser(version='1.0.1')
 
     parser.description = 'Create CORAL option files from a given template option file '\
                          'for a given run number. The script will create one '\
@@ -118,14 +118,15 @@ def main():
     #coral_options = make_options(options.opt,options.events)
     coral_options = read_coral_options_file(options.opt)
 
-    if options.output and options.output[-1]!='/':
-        options.output += '/'
+    if options.output:
+        options.output = os.path.abspath(options.output)
 
     if options.run!=None:
     
         # List of Patters to be replaced
         tags={}
         tags['\?\?\?EVENTS\?\?\?'] = str(options.events)
+        tags['\?\?\?OUTDIR\?\?\?'] = options.output
     
         for f in db.get_run_files(options.run,True,options.dbaccess):
 
