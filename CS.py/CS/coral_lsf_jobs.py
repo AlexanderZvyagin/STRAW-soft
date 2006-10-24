@@ -5,7 +5,7 @@ from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser(version='1.0.3')
+    parser = optparse.OptionParser(version='1.0.4')
 
     parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -27,6 +27,9 @@ def main():
 
     parser.add_option('', '--noterm',dest='noterm',default=False,action='store_true',
                       help='Do not use fancy output (terminal properties).')
+
+    parser.add_option('', '--echo',dest='echo',default=False,action='store_true',
+                      help='This option is used for testing.')
 
     (options, args) = parser.parse_args()
 
@@ -125,7 +128,7 @@ def main():
         events = '--events=10'
     else:
         events = '' # Use default number
-    if os.system('cs coral --run=%d --opt=coral.opt %s > coral_opts.log ' % (run,events) ):
+    if os.system('cs coral --output=%s --run=%d --opt=coral.opt %s > coral_opts.log ' % (output,run,events) ):
         return 1
     chunks = int(os.popen('wc coral_opts.log').readline().split()[0])
     print 'Run %d has %d chunk(s).' % (run,chunks)
@@ -136,6 +139,7 @@ def main():
     else:
         queue = '1nd'
         extra = ''
+        #extra = '--jobs-max=%d' % options.njobs
 
     if os.system('cs lsf --queue=%s --coral=%s --output=%s %s cdr*.opt' % (queue,coral_exe,output,extra)):
         print RED,BOLD,'Failed to create the jobs list! Why?',RESET
@@ -160,7 +164,7 @@ def main():
             if terminal:
                 progress.update(float(n_jobs)/chunks, 'Chunk %s' % name)
             n_jobs += 1
-            if os.system('%s > /dev/null' % job):
+            if os.system('%s%s > /dev/null' % (('','echo ')[options.echo],job)):
                 print RED,BOLD,'Something went wrong in the job submitting!',RESET
                 break
         if terminal:
