@@ -1,7 +1,7 @@
 import re,os,sys,optparse
 
 def main():
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.0.2')
     parser.description = 'Prepare LSF jobs to start.'
     parser.usage = 'cs %prog [options] <coral1.opt> [<coral2.opt> ...]\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -64,7 +64,7 @@ def main():
         coral_run = '%s %s > /tmp/%s.log 2>&1' % (options.coral,opt,name)
         script.write(coral_run + '\n\n')
 
-        for f in [ ('mDST-','.root'), ('','.root'), ('','.gfile'), ('','.log')]:
+        for f in [('','.log')]:
             f_in  = '/tmp/%s%s%s' % (f[0],name,f[1])
             f_out = '%s/%s%s%s' % (options.output,f[0],name,f[1])
             script.write('%s %s %s\n' % (cp_command,f_in,f_out))
