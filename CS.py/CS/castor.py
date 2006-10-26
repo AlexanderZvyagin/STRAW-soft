@@ -1,23 +1,25 @@
 from __future__ import generators
-import string,re,os,sys
+import string,re,os,sys,time
 
 def path_stat(path):
     stat={}
     for l in os.popen('rfstat %s 2>&1' % path).readlines():
-        r = re.match('Protection\s+:\s+(?P<protection>[\w-]+)\s+.*',l)
-        if r:
-            return r.group('protection')[0]
-    return None
+        r = re.match('(?P<key>.*?):(?P<data>.*)',l.strip())
+        if not r:
+            raise 'bad format:',l
+        stat[r.group('key').strip()] = r.group('data').strip()
+        
+    return stat
 
 def copy(src,dst,move=False):
     print src,'==>>',dst
-    if path_stat(src)=='-':
+    if path_stat(src)['protection'][0]=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
         if res==0 and move:
             os.system('rfrm %s' % src)
 
-    elif path_stat(src)=='d':
-        if path_stat(dst)=='-':
+    elif path_stat(src)['protection'][0]=='d':
+        if path_stat(dst)['protection'][0]=='-':
             raise "copy: I don't want to copy directory to a file %s" % dst
         dst = dst+'/'+os.path.split(src)[1]
         res = os.system('rfmkdir %s' % dst )
@@ -183,6 +185,135 @@ def cdr_files(years=[],printout=0):
         for f in cdr_files_2006():
             yield f
 
+class mDST:
+    def __init__(self,name):
+        self.name = name
+        stat = path_stat(name)
+        self.time = time.strptime(stat['Last modify'])
+        self.size = int(stat['Size (bytes)'])
+    
+        self.short_name = os.path.split(name)[1]
+        r = re.match('mDST-(?P<run>\d+)-(?P<slot>\d+)-(?P<version>\d+)\.root(\.(?P<n>\d+)){0,1}',self.short_name)
+        if not r:
+            raise 'Bad name:',self.short_name
+        self.run     = int(r.group('run'))
+        self.slot    = int(r.group('slot'))
+        self.version = int(r.group('version'))
+        self.n       = r.group('n')
+        if self.n:
+            self.n = int(self.n)
+        else:
+            self.n = 0
+    
+    def __str__(self):
+        s = ''
+        s += 'Name ............ %s\n' % self.name
+        s += 'Time ............ %s\n' % time.asctime(self.time)
+        s += 'Size ............ %d\n' % self.size
+        s += 'Slot ............ %d\n' % self.slot
+        s += 'Phast version ... %d\n' % self.version
+        return s
+
+class SlotVer:
+    def __init__(self,run,slot_ver):
+        self.run      = run
+        self.slot_ver = slot_ver
+        self.files    = []
+        self.time     = None    # (min,max)
+
+    def __iadd__(self,other):
+        assert self.run == other.run
+        assert self.slot_ver == (other.slot,other.version)
+        self.files.append(other)
+        if not self.time:
+            self.time = [other.time,other.time]
+        else:
+            if self.time[0]>other.time:
+                self.time[0]=other.time
+            if self.time[1]<other.time:
+                self.time[1]=other.time
+        return self
+    
+    def __str__(self):
+        s  = ''
+        s += 'Run %d   slot %d   PHAST version %d\n' % (self.run,self.slot_ver[0],self.slot_ver[1])
+        if self.time:
+            s += 'Time range:  %s <----> %s\n' % (time.asctime(self.time[0]),time.asctime(self.time[1]))
+        for f in self.files:
+            s += f.name + '\n'
+        return s
+
+# Generator of CDR files in 2004 castor directory
+def mDST_files(year,printout=0):
+
+    run_sv = {} # run-> slot,version -> SlotVer
+    
+    info = {}   # run -> (slot,phast) -> (time min,time max)
+
+    mDSTs = {}  # run -> list of mDST files
+
+    n = 10000000  # It is used for tests
+
+    dirs='/castor/cern.ch/compass/data/%d/oracle_dst' % year
+    for period in castor_files(dirs):
+        for f in castor_files(period+'/mDST'):
+
+            try:
+                q = mDST(f)
+            except:
+                continue
+
+            key = (q.slot,q.version)
+
+            if not mDSTs.has_key(q.run):
+                mDSTs[q.run] = {}
+            assert not mDSTs[q.run].has_key(q.short_name)
+            mDSTs[q.run][q.short_name] = q
+
+            if not run_sv.has_key(q.run):
+                run_sv[q.run] = {}
+            if not run_sv[q.run].has_key(key):
+                run_sv[q.run][key] = SlotVer(q.run,(q.slot,q.version))
+            run_sv[q.run][key] += q
+
+            if not info.has_key(q.run):
+                info[q.run] = {}
+            t = time.mktime(q.time)
+            if info[q.run].has_key(key):
+                t_min,t_max = info[q.run][key]
+                if t_min>t:
+                    t_min=t
+                if t_max<t:
+                    t_max=t
+                info[q.run][key] = (t_min,t_max)
+            else:
+                info[q.run][key] = (t,t)
+            
+            n -= 1
+            if n<0: break
+        n -= 1
+        if n<0: break
+    
+    print 'Scan has finished!'
+    if 0:
+        for run,lst in mDSTs.iteritems():
+            print 'run',run
+            for q in lst.values():
+                print q
+
+    mDST_latest = {}  # Run -> SlotVer
+
+    for run,d in run_sv.iteritems():
+        for sv,f in d.iteritems():
+            if not mDST_latest.has_key(run) or mDST_latest[run].time[1]<f.time[1]:
+                mDST_latest[run] = f
+
+    print 'Writing to the DB'
+    for run,sv in mDST_latest.iteritems():
+        for f in sv.files:
+            os.system('mysql -ucompass -pHMcheops -e "REPLACE INTO run.mDST (run,file,time,size) VALUES(%d,\'%s\',\'%s\',%d)"' % \
+                       (f.run,f.name,time.strftime('%Y-%m-%d %H:%M:%S',f.time),f.size))
+            
 ########################################################################
 ### The self test
 ########################################################################
@@ -209,9 +340,9 @@ def main():
 
     import optparse
 
-    commands = ['ls','cp','mv']
+    commands = ['ls','cp','mv','mDST']
 
-    parser = optparse.OptionParser(version='1.1.1')
+    parser = optparse.OptionParser(version='1.2.0')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
@@ -260,6 +391,15 @@ def main():
             print 'Usage: castor mv <src> <dst>'
             return 1
         copy(args[0],args[1],move)
+        return 0
+
+    if args[0]=='mDST':
+        del args[0]
+        if len(args)<1:
+            print 'Usage: castor mDST year1 [year2...]'
+            return 1
+        for year in args:
+            mDST_files(int(year))
         return 0
 
     print 'Unknwon command: %s' % args[0]
