@@ -246,16 +246,37 @@ class SlotVer:
 # Generator of CDR files in 2004 castor directory
 def mDST_files(year,printout=0):
 
+    try:
+        import term
+        terminal = term.TerminalController()
+    except:
+        terminal = None
+
     run_sv = {} # run-> slot,version -> SlotVer
     
     info = {}   # run -> (slot,phast) -> (time min,time max)
 
     mDSTs = {}  # run -> list of mDST files
 
-    n = 10000000  # It is used for tests
+    # It is used for tests
+    n = 0
+    n_max = 10000000000
 
     dirs='/castor/cern.ch/compass/data/%d/oracle_dst' % year
+
+    periods=[]
     for period in castor_files(dirs):
+        periods.append(period)
+
+    if terminal:
+        progress = term.ProgressBar(terminal, '%s: %d periods' % (dirs,len(periods)))
+
+    for i in range(len(periods)):
+        period = periods[i]
+
+        if terminal:
+            progress.update(float(i)/len(periods), 'Period %s' % os.path.split(period)[1])
+
         for f in castor_files(period+'/mDST'):
 
             try:
@@ -288,18 +309,21 @@ def mDST_files(year,printout=0):
                 info[q.run][key] = (t_min,t_max)
             else:
                 info[q.run][key] = (t,t)
-            
-            n -= 1
-            if n<0: break
-        n -= 1
-        if n<0: break
+
+            n += 1
+            if n>n_max: break
+        if n>n_max: break
     
-    print 'Scan has finished!'
+    if terminal:
+        progress.update(1,'Scan is finished.')
+
     if 0:
         for run,lst in mDSTs.iteritems():
             print 'run',run
             for q in lst.values():
                 print q
+
+    #print 'Sort and select the files...'
 
     mDST_latest = {}  # Run -> SlotVer
 
@@ -308,7 +332,7 @@ def mDST_files(year,printout=0):
             if not mDST_latest.has_key(run) or mDST_latest[run].time[1]<f.time[1]:
                 mDST_latest[run] = f
 
-    print 'Writing to the DB'
+    print 'Writing to the DB...'
     for run,sv in mDST_latest.iteritems():
         for f in sv.files:
             os.system('mysql -ucompass -pHMcheops -e "REPLACE INTO run.mDST (run,file,time,size) VALUES(%d,\'%s\',\'%s\',%d)"' % \
@@ -342,7 +366,7 @@ def main():
 
     commands = ['ls','cp','mv','mDST']
 
-    parser = optparse.OptionParser(version='1.2.0')
+    parser = optparse.OptionParser(version='1.2.1')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
