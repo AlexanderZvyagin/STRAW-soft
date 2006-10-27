@@ -275,7 +275,7 @@ def mDST_files(year,printout=0):
         period = periods[i]
 
         if terminal:
-            progress.update(float(i)/len(periods), 'Period %s' % os.path.split(period)[1])
+            progress.update(float(i)/len(periods), 'Scanning %s' % os.path.split(period)[1])
 
         for f in castor_files(period+'/mDST'):
 
@@ -334,10 +334,13 @@ def mDST_files(year,printout=0):
 
     print 'Writing to the DB...'
     for run,sv in mDST_latest.iteritems():
+        #os.system('mysql -ucompass -pHMcheops -e "DELETE FROM run.mDST WHERE run=%d"' % run)
+        files=[]
         for f in sv.files:
-            os.system('mysql -ucompass -pHMcheops -e "REPLACE INTO run.mDST (run,file,time,size) VALUES(%d,\'%s\',\'%s\',%d)"' % \
-                       (f.run,f.name,time.strftime('%Y-%m-%d %H:%M:%S',f.time),f.size))
-            
+            files.append(f.name)
+        os.system('mysql -ucompass -pHMcheops -e "REPLACE INTO run.mDST (run,file,time,size) VALUES(%d,\'%s\',\'%s\',%d)"' % \
+                  (run,' '.join(files),time.strftime('%Y-%m-%d %H:%M:%S',sv.time[1]),0))
+
 ########################################################################
 ### The self test
 ########################################################################
