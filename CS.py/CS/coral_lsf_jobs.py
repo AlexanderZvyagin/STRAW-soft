@@ -5,7 +5,7 @@ from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser(version='1.0.4')
+    parser = optparse.OptionParser(version='1.0.5')
 
     parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -42,7 +42,7 @@ def main():
     coral_opt = os.path.abspath(args[2])
     run       = int(args[4])
     run_dir   = os.getcwd()+'/'+str(run)
-    output    = os.path.abspath(args[3]+'/'+str(run))
+    output    = os.path.abspath(args[3])
 
     try:
         if options.noterm:
