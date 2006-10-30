@@ -13,19 +13,21 @@ def path_stat(path):
 
 def copy(src,dst,move=False):
     print src,'==>>',dst
-    if path_stat(src)['protection'][0]=='-':
+    if path_stat(src)['Protection'][0]=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
         if res==0 and move:
             os.system('rfrm %s' % src)
 
-    elif path_stat(src)['protection'][0]=='d':
-        if path_stat(dst)['protection'][0]=='-':
-            raise "copy: I don't want to copy directory to a file %s" % dst
-        dst = dst+'/'+os.path.split(src)[1]
-        res = os.system('rfmkdir %s' % dst )
-        if res:
-            # Error!
-            return res
+    elif path_stat(src)['Protection'][0]=='d':
+        stat = path_stat(dst)
+        if stat.has_key('Protection'):
+            if path_stat(dst)['Protection'][0]=='-':
+                raise "copy: I don't want to copy directory to a file %s" % dst
+        else:
+            res = os.system('rfmkdir %s' % dst )
+            if res:
+                print 'Failed to create the directory \"%s\"' % dst
+                return res
 
         for f in castor_files(src):
             name = os.path.split(f)[1]
@@ -221,6 +223,12 @@ class SlotVer:
         self.files    = []
         self.time     = None    # (min,max)
 
+    def size(self):
+        s = 0
+        for f in self.files:
+            s += f.size
+        return s
+
     def __iadd__(self,other):
         assert self.run == other.run
         assert self.slot_ver == (other.slot,other.version)
@@ -339,7 +347,7 @@ def mDST_files(year,printout=0):
         for f in sv.files:
             files.append(f.name)
         os.system('mysql -ucompass -pHMcheops -e "REPLACE INTO run.mDST (run,file,time,size) VALUES(%d,\'%s\',\'%s\',%d)"' % \
-                  (run,' '.join(files),time.strftime('%Y-%m-%d %H:%M:%S',sv.time[1]),0))
+                  (run,' '.join(files),time.strftime('%Y-%m-%d %H:%M:%S',sv.time[1]),sv.size()))
 
 ########################################################################
 ### The self test
@@ -369,7 +377,7 @@ def main():
 
     commands = ['ls','cp','mv','mDST']
 
-    parser = optparse.OptionParser(version='1.2.1')
+    parser = optparse.OptionParser(version='1.2.2')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
