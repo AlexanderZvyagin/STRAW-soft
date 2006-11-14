@@ -52,6 +52,7 @@ ChannelStatus::ChannelStatus(const string &det_name,const string &chan_name,time
     voltage_low(0),
     trips(0),
     g_Temperature(NULL),
+    g_current(NULL),
     g_HV(NULL),
     h_avail(NULL),
     all_trips(NULL),
@@ -90,8 +91,8 @@ ChannelStatus::ChannelStatus(const string &det_name,const string &chan_name,time
     g_HV->GetXaxis()->SetTimeFormat("#splitline{%d/%m}{%H:%M}");
     g_HV->GetYaxis()->SetTitle("High voltage, V");    
     
-    SetDrawCurrent(true);
-    SetDrawTemperature(true);
+    SetDrawCurrent(false);
+    SetDrawTemperature(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -425,7 +426,7 @@ void ChannelStatus::CalculateStatus(void)
 void ChannelStatus::ReadTemperature(void)
 {
     if( NULL==g_Temperature )
-        throw "ChannelStatus::ReadTemperature(): tempreture container does not exist.";
+        throw "ChannelStatus::ReadTemperature(): temperature container does not exist.";
 
     // First we read the measurements.    
     vector<TSQLRow*> measurements;
@@ -490,7 +491,7 @@ void ChannelStatus::ReadTemperature(void)
 void ChannelStatus::ReadCurrent(void)
 {
     if( NULL==g_current )
-        throw "ChannelStatus::ReadTemperature(): current container does not exist.";
+        throw "ChannelStatus::ReadCurrent(): current container does not exist.";
 
     // First we read the measurements.    
     vector<TSQLRow*> measurements;

@@ -11,18 +11,13 @@
     The present tool helps to find an answeres to these kind of questions.
 
     \section MakeReport How to Create a Report
-      - First of all setup your environment:
         \verbatim
-        $ /afs/cern.ch/compass/detector/straw/bin/cs shell
-        \endverbatim
-      - Now you can create the report:
-        \verbatim
-        $ dcs --t1=20040622 --t2=20040624
+        $ dcs --t1="2006-11-1 00:00:00" --t2="2006-11-11 00:00:00"
         \endverbatim
     
     \section FillDB How to Fill the DB
-     - First of all you have to login on computer \b pccompass04 under account
-       \b compassdcs. You have to know the password for this, ask the DCS group.
+     - First of all you have to login on computer \b pccompass07 under account
+       \b dcs. You have to know the password for this, ask the DCS group.
      - After that please run the following command:
        \verbatim
        $ /afs/cern.ch/compass/detector/straw/bin/cs shell
