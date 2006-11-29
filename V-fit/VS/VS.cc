@@ -22,7 +22,7 @@ using namespace CS;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-extern int minuit_printout;
+extern int minuit_printout,minuit_max_calls;
 
 namespace {
 
@@ -81,7 +81,8 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
         
         // Try to maximize the number of fitted points.
         //  1 is added to avoid the possible '0' values.
-        const double k = (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
+        double k = (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
+        k *= 5; // Increase its influence.
 
         fr = residual/k;
 
@@ -938,7 +939,7 @@ void VS::CalculateRT2(V::VFitResult &result)
     {
         char s[22];
         sprintf(s,"t%d",i+1);
-        minuit.DefineParameter(2+i,s,rt->GetPointsT()[i],1,0,rt->GetTMax());
+        minuit.DefineParameter(2+i,s,rt->GetPointsT()[i],1,-5,rt->GetTMax());
     }
 
     // -- Set the fit function.
@@ -947,7 +948,7 @@ void VS::CalculateRT2(V::VFitResult &result)
     me = this;
     _res_ = &result;
 
-    arglist[0] = 5000;
+    arglist[0] = minuit_max_calls;
     //minuit.mnexcm("SIMPLE", arglist ,1,ierflg);
     minuit.mnexcm("MINIMIZE", arglist ,1,ierflg);
     //minuit.mnmnos();
@@ -973,12 +974,15 @@ void VS::CalculateRT2(V::VFitResult &result)
     result.t0_err=err;
 
     assert( rt->GetPointsR().size()==(minuit.GetNumPars()-2) );
+    assert(rt->GetPointsR().size()>0);
     double x[rt->GetPointsR().size()];
     for( size_t i=0; i<rt->GetPointsR().size(); i++ )
     {
         minuit.GetParameter(i+2,par,err);
         x[i] = par;
+        x[i] -= x[0];
     }
+    result.t0 += x[0];
     
     result.rt = new RTRelationGrid(RT_construct(*rt,rt->GetPointsR().size(),x));
     result.rt->SetT0(result.t0);
@@ -1084,11 +1088,11 @@ void VS::VFit(VFitResult &result)
             //minuit.mnexcm("SEEK", arglist ,0,ierflg);
         }
 
-        arglist[0] = 1000; // Call limit
+        arglist[0] = minuit_max_calls; // Call limit
         minuit.mnexcm("MINIMIZE", arglist ,1,ierflg);
     }
     //minuit.mnmnos();
-    arglist[0]=1000;
+    arglist[0]=minuit_max_calls;
     minuit.mnexcm("MINOs", arglist, 1,ierflg);
     
     _res_ = NULL;

@@ -70,6 +70,7 @@ V *v_code=VConstruct_default();
 } // namespace
 
 int minuit_printout     = -1;
+int minuit_max_calls    = 10000;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -295,6 +296,8 @@ int main(int argc,const char *argv[])
                                           "STRAW detector to be used", "NAME" },
             { "mdebug",     '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_printout,0,
                                           "Minuit printout level (3,2,1,0,-1)", "LEVEL" },
+            { "max-calls",  '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_max_calls,0,
+                                          "Minuit: maximum number of function calls.", "INTEGER" },
             { "chf",        '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &channel_first,  0,
                                           "First channel to fit", "NUMBER" },
             { "chl",        '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &channel_last,   0,

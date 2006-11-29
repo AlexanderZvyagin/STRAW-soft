@@ -8,7 +8,7 @@ T0-geoID-report.pdf: T0-geoID-report.dvi
 	dvipdf  T0-geoID-report.dvi T0-geoID-report.pdf
 #	mv et.pdf zvyagin_060601.pdf
 
-T0-geoID-report.dvi: T0-geoID-report.tex t0-tables.tex cards.tex *.eps
+T0-geoID-report.dvi: T0-geoID-report.tex t0-tables.tex cards.tex
 	latex T0-geoID-report && latex T0-geoID-report
 
 ps:     T0-geoID-report.dvi

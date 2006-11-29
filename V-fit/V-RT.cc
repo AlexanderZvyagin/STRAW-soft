@@ -8,6 +8,8 @@
 #include "TRint.h"
 #include "TStyle.h"
 #include "TH1.h"
+#include "TH2.h"
+#include "TGraph.h"
 #include "TCanvas.h"
 
 #include "Detectors/s_stream.h"
@@ -44,6 +46,36 @@ V *v_code=VConstruct_default();
 } // namespace
 
 int minuit_printout     = -1;
+int minuit_max_calls    = 10000;
+
+////////////////////////////////////////////////////////////////////////////////
+
+void report(V::VFitResult &result)
+{
+    TCanvas *c1 = new TCanvas("Vplot");
+
+    // 1. draw data
+    TH2 &hV = *const_cast<TH2*>(result.hV);
+    gStyle->SetPalette(1);
+    hV.Draw("COLZ");
+
+    // 2. draw rt
+
+    if( result.rt!=NULL )
+        result.rt->MakeGraph(result.w0)->Draw("SL*");
+    
+    c1->Write();
+    c1->Print();
+    
+    TCanvas *c2 = new TCanvas("Vresidual");
+
+    // 3. draw residual plot
+    if( result.residuals_corr[0].h!=NULL )
+        result.residuals_corr[0].h->Draw();
+        
+    c2->Write();
+    c2->Print();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -114,6 +146,8 @@ void RT_fit(void)
         printf("The RT is:\n");
         printf("%s\n",string(*result.rt).c_str());
         printf("t0=%g   w0=%g\n",result.t0,result.w0);
+        
+        report(result);
     }
     else
         printf("RT calculation has failed!\n");
@@ -137,6 +171,8 @@ int main(int argc,const char *argv[])
                                           "STRAW detector to be used", "NAME" },
             { "mdebug",     '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_printout,0,
                                           "Minuit printout level (3,2,1,0,-1)", "LEVEL" },
+            { "max-calls",  '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_max_calls,0,
+                                          "Minuit: maximum number of function calls.", "INTEGER" },
             { "RT",         '\0', POPT_ARG_STRING,  &rt_string,                             0,
                                           "Starting RT relations", "STRING" },
             { "t0-start",   '\0', POPT_ARG_FLOAT,  &t0_start, 0,
@@ -173,7 +209,7 @@ int main(int argc,const char *argv[])
         }
         
         session = poptGetArg(poptcont);
-        printf("%p %p\n",session,poptPeekArg(poptcont));
+
         if( session==NULL || poptPeekArg(poptcont)!=NULL )
         {
             poptPrintHelp(poptcont,stdout,0);
