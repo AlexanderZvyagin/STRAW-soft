@@ -988,7 +988,7 @@ void VS::CalculateRT2(V::VFitResult &result)
         else
             x[i] = par - x_ref;
     }
-    result.t0 -= x[0];
+    result.t0 -= x_ref;
     
     result.rt = new RTRelationGrid(RT_construct(*rt,rt->GetPointsR().size(),x));
     result.rt->SetT0(result.t0);
