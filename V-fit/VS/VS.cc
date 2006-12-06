@@ -954,9 +954,9 @@ void VS::CalculateRT2(V::VFitResult &result)
     //minuit.mnmnos();
 
     // Clear some variables which are used by minuit.
-
     me = NULL;
     _res_ = NULL;
+
 
     // Read fit results.
 
@@ -975,14 +975,20 @@ void VS::CalculateRT2(V::VFitResult &result)
 
     assert( rt->GetPointsR().size()==(minuit.GetNumPars()-2) );
     assert(rt->GetPointsR().size()>0);
-    double x[rt->GetPointsR().size()];
+    double x[rt->GetPointsR().size()], x_ref=0;
+
     for( size_t i=0; i<rt->GetPointsR().size(); i++ )
     {
         minuit.GetParameter(i+2,par,err);
-        x[i] = par;
-        x[i] -= x[0];
+        if( i==0 )
+        {
+            x_ref=par;
+            x[i]=0;
+        }
+        else
+            x[i] = par - x_ref;
     }
-    result.t0 += x[0];
+    result.t0 -= x[0];
     
     result.rt = new RTRelationGrid(RT_construct(*rt,rt->GetPointsR().size(),x));
     result.rt->SetT0(result.t0);
