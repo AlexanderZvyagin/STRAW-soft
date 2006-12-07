@@ -85,8 +85,7 @@ class V
         */
         void Fit(void);
         
-        const std::string   GetName(void) const { if(h==NULL)throw "V::Residual::GetName(): no name.";
-                                                  return h->GetName();}
+        const std::string   GetName(void) const;
         
         const TH1* GetHist(void) const {return h;}
               TH1* GetHist(void)       {return h;}

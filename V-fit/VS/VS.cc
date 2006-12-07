@@ -1003,17 +1003,16 @@ void VS::CalculateRT2(V::VFitResult &result)
             int(result.delta));
 
     TCanvas *canvas = new TCanvas(name,title,600,900);
-    //canvas->Divide(2,2);
 
     // V-plot and fit result
-    canvas->cd(1);
-
     result.hV->Draw("colz");
     result.rt->MakeGraph(result.w0)->Draw("SL*");
 
     // Write the report.
     canvas->Write();
     canvas->Print("",".eps");
+    delete canvas;
+    printf("EXIT 1\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1189,7 +1188,7 @@ void VS::VCreate(const char *src,VFitResult &result)
     for( size_t i=0; i<events.size(); i++ )
     {
         if( nt->GetEvent(events[i])<=0 )
-            printf("VS::VCreate(): Can not read all events from the ntuple!\n");
+            fprintf(stderr,"VS::VCreate(): Can not read an event from the ntuple!\n");
 
         result.vdata.push_back( VData() );
         result.vdata.back().x = d;

@@ -24,6 +24,15 @@ V::VFitResult::~VFitResult(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const std::string V::Residual::GetName(void) const
+{
+    if( h==NULL )
+        throw "V::Residual::GetName(): no name.";
+    return h->GetName();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<std::string> V::VFitResult::MakeDescription(void) const
 {
     char s[2222]="";
