@@ -22,7 +22,7 @@ TROOT root("","");
 int
     channel_first       = 0,
     channel_last        = 222,
-    channels_group      = 1;
+    channels_group      = 222;
 vector< pair<int,int> >
     straw_regions;
 const char
