@@ -105,52 +105,6 @@ void RT_fit(V::VFitResult &result)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool read_data(istream &is,std::vector<V::VData> &data)
-{
-    printf("Reading the data...");
-    fflush(stdout);
-
-    data.empty();
-
-    string line;
-    int n=-1;
-    while( getline(is,line) )
-    {
-        if( line.size()==0 || line[0]=='#' )
-            continue;
-
-        if( n==-1 )
-        {
-            char tmp;
-            if( 1!=sscanf(line.c_str(),"%d %c",&n,&tmp) )
-                throw "read_data(): Bad format, a single number is expected!";
-        }
-        else
-        {
-            assert(n>0);
-        
-            V::VData v;
-            if( 3!=sscanf(line.c_str(),"%g %g %g",&v.x,&v.t,&v.w) )
-                throw "read_data(): Bad format! (x,t,w)  numbers are expected!";
-            else
-                data.push_back(v);
-            n--;
-
-            if( n==0 )
-            {
-                // Finish data reading!
-                printf("  The data are read fine!\n");
-                return true;
-            }
-        }
-    }
-
-    // End of data
-    return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 int main(int argc,const char *argv[])
 {
     try
@@ -271,7 +225,7 @@ int main(int argc,const char *argv[])
             result.detector         = "UNKNOWN";
             result.signal_velocity  = svel;
 
-            if( read_data(cin,result.vdata) )
+            if( V::read_data(cin,result.vdata) )
                 RT_fit(result);
         }
         

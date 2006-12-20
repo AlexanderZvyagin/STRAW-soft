@@ -356,6 +356,8 @@ class V
     
     /// Fit time difference plot
     virtual void        FitTimeDiffPlot         (TH1 &h);
+    
+    static bool         read_data               (std::istream &is,std::vector<V::VData> &data);
 };
 
 #endif // V_include

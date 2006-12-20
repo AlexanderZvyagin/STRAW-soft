@@ -301,8 +301,9 @@ TH2 *V::MakeHistogram(const char *name, const char *title,const std::vector<V::V
     
     t_avr /= vdata.size();
     x_avr /= vdata.size();
-    
+
     TH2F *h=new TH2F(name,title,100,x_avr-dx/2,x_avr+dx/2,100,t_avr-dt/2,t_avr+dt/2);
+    h->SetDirectory(NULL);
     for( std::vector<V::VData>::const_iterator it=vdata.begin(); it!=vdata.end(); it++ )
         h->Fill(it->x,it->t);
 
@@ -380,6 +381,7 @@ void V::Residual::Book(const std::string &_name,const std::string &_title)
     delete h;
     
     h = new TH1F(name.c_str(),_title.c_str(),100,-0.2,0.2);
+    h -> SetDirectory(NULL);
     h -> GetXaxis()->SetTitle("Distance [cm]");
     h -> GetYaxis()->SetTitle("Entries");
     h -> SetDirectory(NULL);
@@ -534,5 +536,52 @@ void V::Residual::MakeReport(TVirtualPad *pad) const
     pad->cd();
     h->Draw();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool V::read_data(std::istream &is,std::vector<V::VData> &data)
+{
+    fflush(stdout);
+
+    data.empty();
+
+    std::string line;
+    int n=-1;
+    while( getline(is,line) )
+    {
+        if( line.size()==0 || line[0]=='#' )
+            continue;
+
+        if( n==-1 )
+        {
+            char tmp;
+            if( 1!=sscanf(line.c_str(),"%d %c",&n,&tmp) )
+                throw "V::read_data(): Bad format, a single number is expected!";
+        }
+        else
+        {
+            assert(n>0);
+        
+            V::VData v;
+            if( 3!=sscanf(line.c_str(),"%g %g %g",&v.x,&v.t,&v.w) )
+                throw "V::read_data(): Bad format! (x,t,w)  numbers are expected!";
+            else
+                data.push_back(v);
+            n--;
+
+            if( n==0 )
+            {
+                // Finish data reading!
+                return true;
+            }
+        }
+    }
+
+    // End of data
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////
