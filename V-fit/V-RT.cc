@@ -16,7 +16,6 @@
 #include "V.h"
 #include "VS/VS.h"
 #include "Detectors/RTRelationGrid.h"
-#include "Detectors/RTRelationPoly.h"
 
 using namespace std;
 using namespace CS;
@@ -24,19 +23,6 @@ using namespace CS;
 namespace {
 
 TROOT root("","");
-
-float
-    t0_start            = 0,
-    w0_start            = 0,
-    svel                = 0;
-const char
-    *session            = NULL,
-    *detector           = "",
-    *file_in            = "",
-    *rt_string          = NULL,
-    *cuts               = "(tr_Xi2/tr_nh<3)&&(tr_z1<1450)&&(abs(tr_t)<4)&&(tr_q!=0)";
-string
-    program_full_name;
 
 V* VConstruct_default(void) {return new VS;}
 void VDestroy_default(V *v) {delete v;}
@@ -79,56 +65,19 @@ void report(V::VFitResult &result)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void RT_fit(void)
+void RT_fit(V::VFitResult &result)
 {
+    printf("Starting the fit...\n");
+
     if( v_code==NULL )
         throw "many_V_fit(): v_code==NULL";
-
-    char name[88], title[88];
-    sprintf(name,"%s.root",session);
-    TFile f(name,"UPDATE","",9);
-
-    V::VFitResult result;
-
-    result.program          = program_full_name;
-    result.detector         = detector;
-    result.pos              = 0;
-    result.delta            = 0;
-    result.cuts             = cuts;
-    result.channel_first    = -1;
-    result.channel_last     = -1;
-    result.t0_start         = t0_start;
-    result.w0_start         = w0_start;
-    result.signal_velocity  = svel;
-
-    if( rt_string==NULL )
-        throw "RT_fit(): No initial RT!";
-
-    if( 0==strncmp(rt_string,"RT-Grid ",8) )
-        result.rt = new RTRelationGrid(rt_string);
-    else
-        throw "RT_fit(): Unknwon RT-relation.";
-
-    if( result.t0_start!=0 )
-        result.rt->SetT0(result.t0_start);
-    else
-        result.t0_start = result.rt->GetT0();
 
     result.r  = result.rt->GetRMax();
     result.dt = result.rt->GetTMax();
 
-    result.vdata.clear();
-
-    printf("Create vdata ....");
-    fflush(stdout);
-    v_code->VCreate(file_in,result);
-    printf("  %d points created\n",result.vdata.size());
-
-    f.cd();
-
-    sprintf(name,"%s__V",detector);
-    sprintf(title,"Session \"%s\" %s",session,detector);
-    result.hV = v_code->MakeHistogram(name,title,result.vdata,result.r*2.4,result.dt);
+    char title[result.comment.size()+33];
+    sprintf(title,"Session \"%s\"",result.comment.c_str());
+    result.hV = v_code->MakeHistogram("V",title,result.vdata,result.r*2.4,result.dt);
 
     VS *v = dynamic_cast<VS*>(v_code);
     if( v==NULL )
@@ -156,35 +105,86 @@ void RT_fit(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool read_data(istream &is,std::vector<V::VData> &data)
+{
+    printf("Reading the data...");
+    fflush(stdout);
+
+    data.empty();
+
+    string line;
+    int n=-1;
+    while( getline(is,line) )
+    {
+        if( line.size()==0 || line[0]=='#' )
+            continue;
+
+        if( n==-1 )
+        {
+            char tmp;
+            if( 1!=sscanf(line.c_str(),"%d %c",&n,&tmp) )
+                throw "read_data(): Bad format, a single number is expected!";
+        }
+        else
+        {
+            assert(n>0);
+        
+            V::VData v;
+            if( 3!=sscanf(line.c_str(),"%g %g %g",&v.x,&v.t,&v.w) )
+                throw "read_data(): Bad format! (x,t,w)  numbers are expected!";
+            else
+                data.push_back(v);
+            n--;
+
+            if( n==0 )
+            {
+                // Finish data reading!
+                printf("  The data are read fine!\n");
+                return true;
+            }
+        }
+    }
+
+    // End of data
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc,const char *argv[])
 {
     try
     {
+        V::VFitResult result;
+
         int ac=0;
-        char *av[]={"NULL"}; 
+        char
+            *av[]={"NULL"};
+        const char
+            *session   = NULL,
+            *rt_string = NULL;
+
+        float
+            t0_start            = 0,
+            w0_start            = 0,
+            svel                = 0;
 
         struct poptOption options[] =
         {
-            { "data",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &file_in,     0,
-                                          "Input ROOT file. ", "PATH" },
-            { "det",        '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &detector,    0,
-                                          "STRAW detector to be used", "NAME" },
             { "mdebug",     '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_printout,0,
                                           "Minuit printout level (3,2,1,0,-1)", "LEVEL" },
             { "max-calls",  '\0', POPT_ARG_INT|POPT_ARGFLAG_SHOW_DEFAULT,  &minuit_max_calls,0,
                                           "Minuit: maximum number of function calls.", "INTEGER" },
             { "RT",         '\0', POPT_ARG_STRING,  &rt_string,                             0,
-                                          "Starting RT relations", "STRING" },
-            { "t0-start",   '\0', POPT_ARG_FLOAT,  &t0_start, 0,
+                                          "Starting RT relation", "STRING" },
+            { "t0-start",   '\0', POPT_ARG_FLOAT,  &result.t0_start, 0,
                                           "Starting value for t0 calculation. If not given, "
                                           "it is taken from --t0-ref option or (if it the option is missing) "
                                           "automatic t0 calculation is used.", "FLOAT" },
-            { "w0-start",   '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &w0_start, 0,
+            { "w0-start",   '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &result.w0_start, 0,
                                           "Starting value for w0 calculation (wire position).", "FLOAT" },
-            { "svel",       '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &svel, 0,
+            { "svel",       '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &result.signal_velocity, 0,
                                           "Signal propagation velocity. Use 0, if you don't want to use it.", "FLOAT" },
-            { "cuts",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &cuts,        0,
-                                          "Extra cuts to be used in events selection.", "STRING" },
             POPT_AUTOHELP
             POPT_TABLEEND
         };
@@ -207,7 +207,7 @@ int main(int argc,const char *argv[])
                     return 1;
             }
         }
-        
+
         session = poptGetArg(poptcont);
 
         if( session==NULL || poptPeekArg(poptcont)!=NULL )
@@ -228,33 +228,52 @@ int main(int argc,const char *argv[])
 
         if( 1 )
         {
-            program_full_name="";
+            result.program="";
             // Create the program full name
             for( int a=0; a<argc; a++ )
             {
                 if( strchr(argv[a],' ')!=NULL )
                 {
-                    program_full_name += '"';
-                    program_full_name += argv[a];
-                    program_full_name += '"';
+                    result.program += '"';
+                    result.program += argv[a];
+                    result.program += '"';
                 }
                 else
-                    program_full_name += argv[a];
-                program_full_name += ' ';
+                    result.program += argv[a];
+                result.program += ' ';
             }
         }
+
+        result.comment  = session;
+        result.detector = "UNKNOWN";
         
-        printf("%s\n",program_full_name.c_str());
+        printf("%s\n",result.program.c_str());
         printf("Session name .................... %s\n", session);
         printf("Output file ..................... %s.root\n",session);
-        printf("Input V data .................... %s\n", file_in);
-        printf("Detector ........................ %s\n", detector);
+        printf("Detector ........................ %s\n", result.detector.c_str());
         printf("RT .............................. %s\n", rt_string);
-        printf("Starting t0 for the fit ......... %g\n", t0_start);
-        printf("Starting w0 for the fit ......... %g\n", w0_start);
-        printf("cuts ............................ %s\n", cuts);
+        printf("Starting t0 for the fit ......... %g\n", result.t0_start);
+        printf("Starting w0 for the fit ......... %g\n", result.w0_start);
 
-        RT_fit();
+        const string fname = string(session)+".root";
+        TFile f(fname.c_str(),"UPDATE","",9);
+
+        if(1)
+        {
+            if( rt_string==NULL )
+                throw "RT_fit(): No initial RT!";
+
+            if( 0==strncmp(rt_string,"RT-Grid ",8) )
+                result.rt = new RTRelationGrid(rt_string);
+            else
+                throw "RT_fit(): Unknwon RT-relation.";
+
+            result.detector         = "UNKNOWN";
+            result.signal_velocity  = svel;
+
+            if( read_data(cin,result.vdata) )
+                RT_fit(result);
+        }
         
         VDestroy(v_code);
 
