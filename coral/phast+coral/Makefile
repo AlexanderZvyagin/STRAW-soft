@@ -27,7 +27,8 @@
 # Default: if not specified, current "official" "PROD" version date is assumed.
 # (See CORAL_DATE definition below)
 #
-
+#
+#
 # some definitions
 THIS=$(shell pwd)/////
 LIBDIR=$(subst coral/////,lib,$(THIS))
@@ -108,20 +109,25 @@ export ROOTLIB=`root-config --glibs` $(RFIOLIB)
 ifdef USR_PACK
   PREPROC += "-D USR_PACK"
   MORE_LIBS =  $(ULIB) $(MLIB)
+  MORE_LIBS_LINK = $(MLIB)
 endif
 
-LIBS += -L$(Detectors)/lib -lDetectors
+export INCLUDE += $(C_INCLUDES) -I$(LIBDIR) -I$(USRDIR) -I$(SRCDIR) 
+export FLAGS = -g -Wall $(PREPROC) 
+export LD = $(CXX) -shared
+export DLSUF = so
 
-export INCLUDE += $(C_INCLUDES) -I$(LIBDIR) -I$(USRDIR) -I$(SRCDIR) -I$(Detectors)/include
-export FLAGS = -Wall $(PREPROC) 
+Detectors = /afs/cern.ch/compass/detector/straw/Detectors/SLC4
+export INCLUDE += -I$(Detectors)/include
+LIBS           += $(Detectors)/lib/libDetectors.so -Xlinker -rpath -Xlinker /afs/cern.ch/compass/detector/straw/Detectors/SLC4/lib
 
 LOCAL_FLAGS =  -Wno-overloaded-virtual -D PHASTinCORAL -DDEBUG 
 
 # make exe
 $(EXE):	$(ALL_O) $(PLIB) $(MORE_LIBS) Depend.mk 
 	@echo "Making " $(EXE)
-	@$(CXX) -o $(EXE) $(FLAGS) $(C_FLAGS) $(ALL_O) $(MORE_LIBS) $(LIBS) $(PLIB) \
-	$(CERNLIB) $(ROOTLIB) $(LIBS)  -Xlinker -R$(Detectors)/lib
+	@$(CXX) -o $(EXE) $(FLAGS) $(C_FLAGS) $(ALL_O) $(MORE_LIBS_LINK) $(LIBS) $(PLIB) \
+	$(CERNLIB) $(ROOTLIB) $(LIBS)
 
 # make "phast with coral lib"
 $(PCOL):	./main.o $(PLIB) $(MORE_LIBS) Depend.mk 
@@ -167,6 +173,14 @@ show:
 #	@echo $(PHASTDIR)
 
 -include Depend.mk
+
+
+
+
+
+
+
+
 
 
 

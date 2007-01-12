@@ -8,8 +8,6 @@
 #include "CsTrack.h"
 #include "CsEvent.h"
 
-#include "CsStrawTubesDetector.h"
-
 namespace CS {
 
 using namespace std;
@@ -48,11 +46,13 @@ const CsHelix& helix_last(const CsTrack &t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CoralDet::CoralDet(CsDet &det_) :
-    drift_det(NULL),
+CoralDet::CoralDet(CsDet &det_,const CS::DetDatLine *ddl) :
     det(&det_),
+    drift_det(NULL),
     misalignment(0)
 {
+    if( ddl!=NULL )
+        drift_det = new DriftDetector(*ddl);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +76,9 @@ const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
         return NULL;
     }
 
-    const double det_z = GetDriftDet().GetPosition().GetShift().Z()*10;
+    const double det_z = GetDriftDet()->GetPosition().GetShift().Z()*10;
+    
+    //printf("%s (z=%g) Helices: ",GetDriftDet()->GetName().c_str(),det_z);
     
     map<float,const CsHelix*> closest_helices;
     
@@ -95,6 +97,14 @@ const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
             // Otherwise add it to the list of found helices.
             closest_helices[dz]=&*h;
     }
+    //printf("\n");
+    
+//     for( map<float,const CsHelix*>::const_iterator h=closest_helices.begin();
+//          h!=closest_helices.end(); h++ )
+//     {
+//         printf("  %g",h->second->getZ());
+//     }
+//     printf("\n");
 
     if( closest_helices.empty() )
         return NULL;
@@ -117,7 +127,7 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
     // Interpolate a helix to the detector
     // *****************************
 
-    const double det_z = GetDriftDet().GetPosition().GetShift().Z()*10;
+    const double det_z = GetDriftDet()->GetPosition().GetShift().Z()*10;
     CsHelix intr;
     if( !helix->Extrapolate(det_z,intr) )
     {
@@ -130,7 +140,7 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
     // *****************************
 
     const Transform3D
-        &DRS_to_MRS = GetDriftDet().GetPosition(),
+        &DRS_to_MRS = GetDriftDet()->GetPosition(),
         &MRS_to_DRS = DRS_to_MRS.Inverse();
 
     trackMRS = Track3D(TVector3(intr.getX()/10,intr.getY()/10,intr.getZ()/10),
@@ -144,49 +154,6 @@ const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &tr
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CoralDet *CoralDets::Create(CsDet &d)
-{
-    if( d.GetTBName().substr(0,2)=="ST" )
-        return new CoralDetST(d);
-
-    if( d.GetTBName().substr(0,2)=="DC" )
-        return new CoralDetDC(d);
-
-    if( d.GetTBName().substr(0,2)=="DW" )
-        return new CoralDetDW(d);
-    
-    if( d.GetTBName().substr(0,2)=="DR" )
-        return new CoralDetDW(d);
-    
-    return NULL;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void CoralDets::AddDetectors(void)
-{
-    for( Detectors::iterator d=begin(); d!=end(); d++ )
-    {
-        const string &name = (*d)->GetName();
-        CsDet *ptr = CsDet::GetAllDetectors()[name];
-        if( ptr==NULL )
-        {
-            printf("Detector was not found: %s\n",name.c_str());
-            continue;
-        }
-
-        CoralDet *det = CoralDets::Create(*ptr);
-        if( det!=NULL )
-        {
-            det -> drift_det = dynamic_cast<DriftDetector*>(*d);
-            assert(det!=NULL);
-            dets[ptr] = det;
-        }
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 // Try to make an association between the track and the detector
 bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 {
@@ -194,10 +161,7 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     // Check on the detector
     // *****************************
 
-    if( drift_det==NULL )
-        return false;
-    
-    GetDriftDet().GetObjCORAL().Clear();
+    drift_det->GetObjCORAL().Clear();
 
     // *****************************
     // Now create Track3D objects of the interpolated track
@@ -207,10 +171,6 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     const CsHelix *helix = PropogateAndCheck(track_MRS,trackMRS,trackDRS);
     if( NULL==helix )
         return false;
-
-    const TVector3
-        &hitMRS = trackMRS.GetPoint(),     // reference
-        &hitDRS = trackDRS.GetPoint();     // reference
 
     // *****************************
     // Find the best association (amoung all digits) in the detector with the track
@@ -232,12 +192,13 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     
         CS::DriftDetectorChannel *channel=drift_det->FindChannel(channel_num,channel_pos);
         
-        //if( channel==NULL && channel_pos!=0 )
-        //    channel=drift_det->FindChannel(channel_num,0);
+        if( channel==NULL && channel_pos!=0 )
+            channel=drift_det->FindChannel(channel_num,0);
 
         if( channel==NULL )
         {
-            printf("can not find channel %d,%d",(unsigned)channel_num,(unsigned)channel_pos);
+            printf("CoralDet::MakeAssociation(): %s can not find channel %d,%d\n",
+                    drift_det->GetName().c_str(),(unsigned)channel_num,(unsigned)channel_pos);
             return false;
         }
 
@@ -256,7 +217,6 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 
             drift_det->GetObjCORAL().SetDist( drift_dist );
             drift_det->GetObjCORAL().SetTime( time );
-            drift_det->GetObjCORAL().SetT0( time - (*dg)->getData()[0] );
 
             float r=-1;
             if( drift_det->GetObjCORAL().GetChan()>=0 )
@@ -269,22 +229,6 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
             drift_det->GetObjCORAL().SetSrcID( (int)(*dg)->getData()[3] );
             drift_det->GetObjCORAL().SetGeoID( (int)(*dg)->getData()[4] );
             drift_det->GetObjCORAL().SetCardChan( (int)(*dg)->getData()[5] );
-            
-            CoralDetST *st = dynamic_cast<CoralDetST *>(this);
-            if( st!=NULL )
-            {
-                //if( st -> DetCoral() -> xray !=NULL )
-                //    drift_det->GetObjCORAL().SetCorrSpacers( st -> DetCoral() -> xray -> xray_correction((*dg)->getAddress(),hitDRS.Y()) );
-
-                // Signal propagation time velocity.
-                static const double v = 28; 
-
-                // Signal propagation time direction.
-                int sign = (*dg)->getData()[1]>0 ? -1:1;
-
-                drift_det->GetObjCORAL().SetCorrSignalPropTime( - sign * hitDRS.Y()/v );
-            }
-            
         }
     }
 
@@ -300,6 +244,10 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 
     if( fill )
     {
+        const TVector3
+            &hitMRS = trackMRS.GetPoint(),     // reference
+            &hitDRS = trackDRS.GetPoint();     // reference
+
         drift_det->GetObjCORAL().SetHitMRS(hitMRS);
         drift_det->GetObjCORAL().SetHitDRS(hitDRS);
         drift_det->GetObjCORAL().SetTrackAngle(trackDRS.GetDirection().X()/trackDRS.GetDirection().Z(),
@@ -313,10 +261,6 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 
         drift_det->GetObjCORAL().SetTrackBegin( helix_first(track_MRS).getZ() );
         drift_det->GetObjCORAL().SetTrackEnd  ( helix_last (track_MRS).getZ() );
-        
-        CsVertex *v = track_MRS.getFirstVertex();
-        if( v!=NULL )
-            drift_det->GetObjCORAL().SetPrimaryV(v->isPrimary());
     }
 
     return fill;
@@ -326,14 +270,16 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
 
 bool CoralDets::MakeAssociation(const CsTrack &t,CsDet &d,float misalignment)
 {
-    CoralDet *&det = dets[&d];
+    CoralDet *&det = dets[d.GetTBName()];
+
     if( det==NULL )
         return false;
     
     // 'channel' is NULL if track did not cross the detector
     if( det->MakeAssociation(t,misalignment) )
     {
-        hits.push_back(CoralDet::Hit(det->GetDriftDet().GetObjCORAL(),det));
+        assert(det->GetDriftDet()!=NULL);
+        hits.push_back(CoralDet::Hit(det->GetDriftDet()->GetObjCORAL(),det));
         return true;
     }
     
@@ -365,9 +311,10 @@ void CoralDets::Fill(void)
 {
     for( vector<CoralDet::Hit>::iterator it=hits.begin(); it!=hits.end(); it++ )
     {
-        DriftDetector *dd = &it->coral_det->GetDriftDet();
-        dd -> GetObjCORAL() = it->co;
-        dd -> FillCORALTree();
+        DriftDetector *dd = it->coral_det->GetDriftDet();
+        assert(dd!=NULL);
+        dd->GetObjCORAL() = it->co;
+        dd->FillCORALTree();
     }
 }
 
@@ -382,7 +329,7 @@ bool CoralDet::IsDoubleLayer(const string &s) const
 
 bool CoralDet::DoubleHitsAnalyse(Hit &h1,Hit &h2)
 {
-    if( !h1.coral_det->IsDoubleLayer(h2.coral_det->GetDriftDet().GetName()) )
+    if( !h1.coral_det->IsDoubleLayer(h2.coral_det->GetDriftDet()->GetName()) )
         return false;
 
     if( abs(h1.co.GetChan()-h2.co.GetChan())>2 )
@@ -401,6 +348,34 @@ bool CoralDet::DoubleHitsAnalyse(Hit &h1,Hit &h2)
     h2.co.SetDist2(h1.co.GetDist());
     
     return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+CoralDets::CoralDets(const string &det_dat) :
+    tracks_counter(0),
+    detdat(det_dat)
+{
+    for( std::vector<DetDatLine>::const_iterator ddl=detdat.ddls.begin(); ddl!=detdat.ddls.end(); ddl++ )
+    {
+        const string &name = ddl->TBname;
+        
+        CsDet *d = CsDet::FindDetector(name);
+        if( d==NULL )
+        {
+            printf("CoralDets::CoralDets(): Detector is not found: %s\n",name.c_str());
+            throw "CoralDets::CoralDets(): Detector is not found";
+        }
+        
+        if( name.substr(0,2)=="ST" )
+            dets[name] = new CoralDetST(*d,&*ddl);
+
+        if( name.substr(0,2)=="DC" )
+            dets[name] = new CoralDetDC(*d,&*ddl);
+
+        if( name.substr(0,2)=="DW" )
+            dets[name] = new CoralDetDW(*d,&*ddl);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

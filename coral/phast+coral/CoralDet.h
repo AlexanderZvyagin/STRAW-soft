@@ -5,13 +5,13 @@
 #include "CsRTRelation.h"
 
 #include "Detectors/DriftDetector.h"
+#include "Detectors/DetDat.h"
 
 class CsTrack;
 class CsHelix;
 class CsStrawTubesDetector;
 class CsDriftChamberDetector;
 class CsDWDetector;
-class CsRichWallDetector;
 
 namespace CS {
 
@@ -27,20 +27,20 @@ class CoralDet
     {
       public:
         Hit(const DriftDetectorCORAL &c,CoralDet *cord) : co(c),coral_det(cord) {}
+        //DriftDetectorChannel*   ch;
         DriftDetectorCORAL      co;
         CoralDet *              coral_det;
     };
 
   public:
-    virtual            ~CoralDet                (void) {}
-                        CoralDet                (CsDet &);
+    virtual            ~CoralDet                (void) {delete drift_det;}
+                        CoralDet                (CsDet &,const CS::DetDatLine *ddl=NULL);
+  private:
+                        CoralDet                (const CoralDet &);
   public:
   
-    const
-    DriftDetector &     GetDriftDet             (void) const {return const_cast<CoralDet*>(this)->GetDriftDet();}
-
-    DriftDetector &     GetDriftDet             (void)       {if(drift_det==NULL)throw "CoralDet::GetDriftDet() empty!";return *drift_det;}
-  
+    const DriftDetector *GetDriftDet            (void) const {return drift_det;}
+          DriftDetector *GetDriftDet            (void)       {return drift_det;}
     bool                Extrapolate             (const CsTrack &t) const;
     bool                MakeAssociation         (const CsTrack &t,float misalignment=0);
 
@@ -71,15 +71,15 @@ class CoralDet
     
   public:
 
-    DriftDetector *     drift_det;
     CsDet *             det;
+    DriftDetector *     drift_det;
     float               misalignment;
 };
 
 class CoralDetST: public CoralDet
 {
   public:
-                        CoralDetST              (CsDet &d) : CoralDet(d) {misalignment=0.1;}
+                        CoralDetST              (CsDet &d,const CS::DetDatLine *ddl=NULL) : CoralDet(d,ddl) {misalignment=0.1;}
     bool                IsDoubleLayer           (const string &s) const;
     const CsStrawTubesDetector *DetCoral        (void) const {return reinterpret_cast<const CsStrawTubesDetector*>(det);}
     float               DistRTCoral             (float t) const;
@@ -88,38 +88,26 @@ class CoralDetST: public CoralDet
 class CoralDetDW: public CoralDet
 {
   public:
-                        CoralDetDW              (CsDet &d) : CoralDet(d) {misalignment=1;}
+                        CoralDetDW              (CsDet &d,const CS::DetDatLine *ddl=NULL) : CoralDet(d,ddl) {misalignment=1;}
     bool                IsDoubleLayer           (const string &s) const;
     const CsDWDetector *        DetCoral        (void) const {return reinterpret_cast<const CsDWDetector*>(det);}
-    float               DistRTCoral             (float t) const;
-};
-
-class CoralDetDR: public CoralDet
-{
-  public:
-                        CoralDetDR              (CsDet &d) : CoralDet(d) {misalignment=1;}
-    bool                IsDoubleLayer           (const string &s) const;
-    const CsRichWallDetector * DetCoral         (void) const {return reinterpret_cast<const CsRichWallDetector*>(det);}
     float               DistRTCoral             (float t) const;
 };
 
 class CoralDetDC: public CoralDet
 {
   public:
-                        CoralDetDC              (CsDet &d) : CoralDet(d) {misalignment=0.1;}
+                        CoralDetDC              (CsDet &d,const CS::DetDatLine *ddl=NULL) : CoralDet(d,ddl) {misalignment=0.1;}
     bool                IsDoubleLayer           (const string &s) const;
     const CsDriftChamberDetector *DetCoral      (void) const {return reinterpret_cast<const CsDriftChamberDetector*>(det);}
     float               DistRTCoral             (float t) const;
 };
 
-class CoralDets: public Detectors
+class CoralDets
 {
   public:
-                        CoralDets               (void) : tracks_counter(0) {}
+                        CoralDets               (const string &det_dat);
 
-    static CoralDet *   Create                  (CsDet &d);
-
-    void                AddDetectors            (void);
     bool                MakeAssociation         (const CsTrack &t,CsDet &d,float misalignment=0);
     void                DoubleHitsAnalyse       (void);
     void                Fill                    (void);
@@ -127,7 +115,8 @@ class CoralDets: public Detectors
 
     int                   tracks_counter;
     vector<CoralDet::Hit> hits;
-    map<CsDet*,CoralDet*> dets;
+    map<string,CoralDet*> dets;
+    CS::DetDat          detdat;
 };
 
 }
