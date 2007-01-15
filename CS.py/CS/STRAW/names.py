@@ -1,6 +1,10 @@
+##  @addtogroup STRAW
+##  @{
+
 ##  STRAW drift chamber detector short names for a given year.
 #   
 #   A short name is without ending two characteds, ex: \a ST03X1.
+#   @return List of detectors
 #
 def straw_short_names(year):
     if year in [2002,2003,2004]:
@@ -25,9 +29,12 @@ def straw_short_names(year):
 ##  STRAW drift chamber detector full names for a given year.
 #   
 #   An example of a full name: \a ST03X1db.
+#   @return Generates detector names.
 #
 def straw_full_names(year):
     for n in straw_short_names(year):
         for ud in 'ud':
             for abc in 'abc':
                 yield n+ud+abc
+
+##  @}

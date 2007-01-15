@@ -1,9 +1,16 @@
+##  @addtogroup STRAW
+##  @{
+
 import xml.dom.minidom
 import re
 
+##  @brief Detector mapping.
+#
 class Map:
     names={}
 
+    ##  @brief Initialization
+    #
     def __init__(self):
         self.detector   = ''
         self.srcID      = -1
@@ -23,6 +30,8 @@ class Map:
     def number(self):
         return {0:1,32:2,64:3,80:3,96:4,112:4,128:5,160:6,95:4,127:5,158:6,190:7}[self.wireF]
 
+    ##  @brief Make a nice name.
+    #
     def __str__(self):
         #return '%s [%d,%d]' % (self.detector,self.wireF,self.wireL)
 
@@ -47,12 +56,14 @@ class Map:
         #return '%s   %s [%d,%d]' % (name,self.detector,self.wireF,self.wireL)
         return name
 
-# name  srcID port geoID chanF chanS chanN  wireF wireL wireS [wireP]
-
+##  @internal
+#
 def map_line_analyse(data,mapping):
     d = data.strip()
     if not d:
         return
+
+    # name  srcID port geoID chanF chanS chanN  wireF wireL wireS [wireP]
     r = re.match('\s*'    # Some space
                  '(?P<detector>\w+)\s*'
                  '(?P<src>\d+)\s*'
@@ -94,17 +105,29 @@ def map_line_analyse(data,mapping):
     key = '%d %d' % (m.srcID,m.port)
     mapping[key] = m
 
+##  @internal
+#
 def handle_ChipF1(m,mapping):
     for node in m.childNodes:
         if node.nodeType == node.TEXT_NODE:
             for data in node.data.split('\n'):
                 map_line_analyse(data,mapping)
 
+##  @internal
+#
+#   @arg \b m XML-mapping after xml.dom.minidom.parse(map_file)
+#   @arg \b run Run number
+#   @arg \b mapping dictionary to be filled.
+#
 def handle_Map(m,run,mapping):
     for element in m.getElementsByTagName('ChipF1'):
         #runs = element.getAttribute('runs')
         handle_ChipF1(element,mapping)
 
+##  @brief Read a map file
+#
+#   @return Dictionary with a mapping.
+#
 def read_mapping(map_file,run):
     full_map_file = xml.dom.minidom.parse(map_file)
     mapping = {}
@@ -113,3 +136,5 @@ def read_mapping(map_file,run):
 
 if __name__=='__main__':
     read_mapping('STRAW.xml',44444)
+
+##  @}
