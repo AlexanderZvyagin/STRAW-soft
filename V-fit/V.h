@@ -74,6 +74,11 @@ class V
     */
     class Residual
     {
+      private:
+
+        Residual            (const Residual &);
+        Residual & operator=(const Residual &);
+
       public:
 
         Residual (void) : h(NULL), fit_func(NULL),points_taken(0),points_rejected(0) {}
