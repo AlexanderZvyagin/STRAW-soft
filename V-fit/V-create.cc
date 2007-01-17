@@ -29,6 +29,8 @@ const char
     *detector           = "",
     *file_in            = "",
     *cuts               = "(tr_Xi2/tr_nh<3)&&(tr_z1<1450)&&(abs(tr_t)<4)&&(tr_q!=0)";
+float
+    svel                = 0;
 
 V* VConstruct_default(void) {return new VS;}
 void VDestroy_default(V *v) {delete v;}
@@ -42,10 +44,10 @@ int minuit_max_calls    = 10000;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void many_V_fit(void)
+void V_create(void)
 {
     if( v_code==NULL )
-        throw "many_V_fit(): v_cide==NULL";
+        throw "V_create(): v_code==NULL";
 
     // By default we should fit the full straw! ==>> Use (0,0) as a (pos,delta).
     if( straw_regions.empty() )
@@ -70,6 +72,7 @@ void many_V_fit(void)
             result.cuts             = cuts;
             result.channel_first    = ch;
             result.channel_last     = ch+channels_group-1;
+            result.signal_velocity  = svel;
 
             result.vdata.clear();
 
@@ -81,7 +84,7 @@ void many_V_fit(void)
             printf("%d\n",result.vdata.size());
             for( std::vector<V::VData>::const_iterator it=result.vdata.begin(); it!=result.vdata.end(); it++ )
                 printf("%g  %g  %g\n",it->x,it->t,it->w);
-            printf("\n");
+            printf("\n\n");
         }
     }
 }
@@ -106,6 +109,8 @@ int main(int argc,const char *argv[])
             { "pos",        '\0', POPT_ARG_STRING,  NULL,                                  'P',
                                           "This will select events in the straw region [center-delta,center+delta]. "
                                           "Example: --pos=-30,5", "center,delta" },
+            { "svel",       '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &svel, 0,
+                                          "Signal propagation velocity. Use 0, if you don't want to use it.", "FLOAT" },
             { "cuts",       '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &cuts,        0,
                                           "Extra cuts to be used in events selection.", "STRING" },
             POPT_AUTOHELP
@@ -153,7 +158,7 @@ int main(int argc,const char *argv[])
             return 1;
         }
 
-        many_V_fit();
+        V_create();
         
         VDestroy(v_code);
 
