@@ -41,9 +41,11 @@ RTRelationGrid RT_construct(const RTRelation &rt_template,int n,double *x)
         printf("RT_construct(): bad number of points: %d!=%d\n",n,q->GetPointsT().size());
         throw "RT_construct(): bad number of RT points";
     }
+        
+    assert(q->GetPointsR().size()==n);
+    assert(q->GetPointsT().size()==q->GetPointsR().size());
     
     string rt_string="RT-Grid";
-    
     for( int i=0; i<n; i++ )
     {
         char s[55];
@@ -67,7 +69,9 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
 
     try
     {
+        // Construct RT.
         RTRelationGrid rt=RT_construct(*_res_->rt,np-2,x+2);
+
         rt.SetT0(t0);
 
         V::Residual r;
@@ -93,11 +97,10 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
     }
     catch( ... )
     {
-        fr = 1;
+        fr = 100000;
         return;
     }
     
-
     throw "fcn_RT_calc(): internal problem!";
 }
 
@@ -857,6 +860,7 @@ void VS::CalculateRT(V::VFitResult &result,float dx,const vector<float> &rrr)
                 result.detector.c_str(),result.channel_first,result.channel_last,
                 result.pos,result.delta,result.pos,result.delta);
         result.residuals_corr[0].h = new TH1F(name,title,200,-dx/5,dx/5);
+        result.residuals_corr[0].h -> SetDirectory(NULL);
         result.residuals_corr[0].h -> GetXaxis() -> SetTitle("Distance [cm]");
         result.residuals_corr[0].h -> GetYaxis() -> SetTitle("Events");
         FillResidualPlot("",&result.residuals_corr[0],NULL,NULL,result.vdata,*result.rt,result.t0,result.w0);
@@ -1012,7 +1016,6 @@ void VS::CalculateRT2(V::VFitResult &result)
     canvas->Write();
     canvas->Print("",".eps");
     delete canvas;
-    printf("EXIT 1\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
