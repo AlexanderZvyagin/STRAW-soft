@@ -7,7 +7,12 @@
 #   @return List of detectors
 #
 def straw_short_names(year):
-    if year in [2002,2003,2004]:
+    if year in [2002]:
+        names = \
+        ['ST03X1','ST03Y1','ST03U1',    \
+         'ST03V1','ST03Y2','ST03X2',    \
+         'ST04V1','ST04Y1','ST04X1']
+    elif year in [2003,2004]:
         names = \
         ['ST03X1','ST03Y1','ST03U1',    \
          'ST03V1','ST03Y2','ST03X2',    \
