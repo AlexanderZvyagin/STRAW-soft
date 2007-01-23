@@ -60,6 +60,7 @@ def cdr_files_to_db(years=[],auto_delete=False,remove_test=True):
             for t in tables:
                 print 'removing the table %s' % t
                 db.send('DROP TABLE IF EXISTS %s' % t)
+            remove_test = False
         else:
             print 'OK! Keeping it.'
     
