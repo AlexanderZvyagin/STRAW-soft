@@ -1,3 +1,7 @@
+##  @addtogroup STRAW
+##  @{
+
+
 ##Module to read detector.dat files... in construction
 #To do :
 #1- Function that compare position for same detector in two different years (especially for z position)
@@ -172,9 +176,5 @@ def scan_1w_dist(year):
                 print '%s : %.2f'%(plane+sec,first_wire(det+plane+sec,year) - first_wire(det+plane+'b',year))
 
 
-#def dif_fw(det1,det1, year):
-#    ##Gives the diff btw the 1st wire of the 2 given dtr for the given year    
-#    return 
 
-#print det_val('ST03X1ua','ycen',2004)
-#print det_val('st03x1ua','ycen',2004)
+##  @}
