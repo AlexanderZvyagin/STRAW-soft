@@ -1,7 +1,8 @@
 import ROOT
 import os
 
-def read_table(table,detector = "ST03X1db"):
+def read_table(table,detector):
+    ##Returns a dictionary made of information taken from the given table for the given detector in the format {channel}{position}{value}
     ch_dic = {}
 
     #Checking if the table is in the database   
@@ -51,7 +52,8 @@ def read_table(table,detector = "ST03X1db"):
         ch_dic[chf][pos]['RES'] = res 
         ch_dic[chf][pos]['DATA'] = data 
         
-    print len(ch_dic)
+    if len(ch_dic) == 0:
+        raise 'Could not create dictionnary for %s on table %s'%(detector,table)
     return ch_dic
 
 
@@ -114,6 +116,8 @@ def dist_Value(D_V,value,pos):
 #This function returns the average of a parameter "value" in dictionary "d" 
 #Note : It exclude 0 values  
 def av_value(d,value,pos) :
+    if len(d)==0:
+        raise 'Received empty dictionary!'
     v_sum = 0;
     v_num = 0;
     for i in d.items():
