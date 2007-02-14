@@ -1,1 +1,1 @@
-__all__ = ['mapping','names']
+__all__ = ['mapping','names','geom']
