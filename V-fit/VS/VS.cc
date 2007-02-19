@@ -29,27 +29,39 @@ namespace {
 V::VFitResult *_res_=NULL;
 VS *me = NULL;
 
-RTRelationGrid RT_construct(const RTRelation &rt_template,int n,double *x)
+/*! \brief construct the RT
+    \arg rt_template the distances will be taken from this RT
+    \arg x list of time points, array of the size n=rt_template.GetPointsT().size() (or one element less, see t_max)
+    \arg t0 to be used for the RT.
+    \arg t_max if it is not zero, then the last time point x[n-1] is not used and will be replaced by t_max.
+*/
+RTRelationGrid RT_construct(const RTRelation &rt_template,const vector<double> &x,double t0=0,double t_max=0)
 {
     const RTRelationGrid *q = dynamic_cast<const RTRelationGrid*>(&rt_template);
 
     if( q==NULL )
         throw "RT_construct(): not a RTRelationGrid!";
 
-    if(  n!=q->GetPointsT().size() )
-    {
-        printf("RT_construct(): bad number of points: %d!=%d\n",n,q->GetPointsT().size());
-        throw "RT_construct(): bad number of RT points";
-    }
-        
-    assert(q->GetPointsR().size()==n);
     assert(q->GetPointsT().size()==q->GetPointsR().size());
+    assert(q->GetPointsT().size()==(x.size()+(t_max!=0)));
     
-    string rt_string="RT-Grid";
-    for( int i=0; i<n; i++ )
+    char s[55];
+    sprintf(s,"RT-Grid T0=%g ",t0+x[0]);
+    
+    string rt_string=s;
+    
+    for( int i=0; i<x.size(); i++ )
     {
-        char s[55];
-        sprintf(s," %g:%g",q->GetPointsR()[i],x[i]);
+        // time to be used.
+        double t = x[i]-x[0];
+
+        sprintf(s," %g:%g",q->GetPointsR()[i],t);
+        rt_string += s;
+    }
+
+    if( t_max )
+    {
+        sprintf(s," %g:%g",q->GetPointsR().back(),t_max);
         rt_string += s;
     }
 
@@ -66,18 +78,16 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
 
     // The first two points are w0 and t0:
     const double w0=x[0], t0=x[1];
-
+    
     try
     {
         // Construct RT.
-        RTRelationGrid rt=RT_construct(*_res_->rt,np-2,x+2);
-
-        rt.SetT0(t0);
+        RTRelationGrid rt = RT_construct(*_res_->rt,vector<double>(x+2,x+np),t0,_res_->dt);
 
         V::Residual r;
 
-        const float r_limit = 0.075;
-        me->FillResidualPlot("RT_fit", &r, NULL, NULL, _res_->vdata,rt,t0,w0,r_limit);
+        const float r_limit=1, r_max=0.5;
+        me->FillResidualPlot("RT_fit", &r, NULL, NULL, _res_->vdata,rt,t0,w0,r_limit,100,r_max);
         r.Fit();
 
         #warning "Resolution is taken from a first parameter of the residual fit."
@@ -86,11 +96,11 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
         // Try to maximize the number of fitted points.
         //  1 is added to avoid the possible '0' values.
         double k = (r.points_taken+1.)/(r.points_taken+r.points_rejected+1.);
-        k *= 5; // Increase its influence.
+        //k += 3;
 
         fr = residual/k;
 
-        if( minuit_printout>=3 )
+        if( minuit_printout>=4 )
             printf("FCN: %9.7f = %9.7f / %9.7f\n",fr,residual,k);
 
         return;
@@ -887,8 +897,9 @@ void VS::CalculateRT(V::VFitResult &result,float dx,const vector<float> &rrr)
 void VS::CalculateRT2(V::VFitResult &result)
 {
     // -- A simple check to speed-up fit failer for empty data sets.
-    if( result.vdata.size()<10 )
+    if( result.vdata.size()<100 )
     {
+        printf("VS::CalculateRT2(): Too little (%d) points to fit.\n",result.vdata.size());
         result.t0       = 0;
         result.t0_err   = 0;
         result.w0       = 0;
@@ -914,13 +925,6 @@ void VS::CalculateRT2(V::VFitResult &result)
     result.hV = MakeHistogram(name,title,result.vdata,result.r*2.2,result.dt*1.4);
     result.hV->Write();
 
-
-    if( result.vdata.size()<100 )
-    {
-        printf("VS::CalculateRT2(): Too little (%d) points to fit.\n",result.vdata.size());
-        return;
-    }
-
     // ===================
 
     TMinuit minuit(rt->GetPointsT().size()+2);
@@ -936,10 +940,11 @@ void VS::CalculateRT2(V::VFitResult &result)
         minuit.mnexcm("SET NOWARNINGS", arglist ,0,ierflg);
 
     // -- Declare variables for the fit.
-    minuit.DefineParameter(0,"w0",result.w0_start,0.1,-0.15,0.15);
+    minuit.DefineParameter(0,"w0",result.w0_start,0.1,-0.1,0.1);
     minuit.DefineParameter(1,"T0",result.t0_start,1,0,0);
 
-    for( size_t i=0; i<rt->GetPointsT().size(); i++ )
+    const size_t n_points = rt->GetPointsT().size()-(result.dt!=0);
+    for( size_t i=0; i<n_points; i++ )
     {
         char s[22];
         sprintf(s,"t%d",i+1);
@@ -977,25 +982,19 @@ void VS::CalculateRT2(V::VFitResult &result)
     result.t0=par;
     result.t0_err=err;
 
-    assert( rt->GetPointsR().size()==(minuit.GetNumPars()-2) );
     assert(rt->GetPointsR().size()>0);
-    double x[rt->GetPointsR().size()], x_ref=0;
+    double x[rt->GetPointsR().size()+1], x_ref=0;
 
-    for( size_t i=0; i<rt->GetPointsR().size(); i++ )
+    for( size_t i=0; i<n_points; i++ )
     {
         minuit.GetParameter(i+2,par,err);
-        if( i==0 )
-        {
-            x_ref=par;
-            x[i]=0;
-        }
-        else
-            x[i] = par - x_ref;
+        x[i] = par;
     }
-    result.t0 -= x_ref;
     
-    result.rt = new RTRelationGrid(RT_construct(*rt,rt->GetPointsR().size(),x));
-    result.rt->SetT0(result.t0);
+    if( result.dt )
+        x[rt->GetPointsR().size()] = result.dt;
+    
+    result.rt = new RTRelationGrid(RT_construct(*rt,vector<double>(x,x+n_points),result.t0,result.dt));
     delete rt;
 
     // Make the report.
