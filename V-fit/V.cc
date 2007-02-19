@@ -362,7 +362,7 @@ V::Residual::~Residual(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void V::Residual::Book(const std::string &_name,const std::string &_title)
+void V::Residual::Book(const std::string &_name,const std::string &_title,unsigned int bins,float rmax)
 {
     delete fit_func;
     fit_func=NULL;
@@ -380,7 +380,7 @@ void V::Residual::Book(const std::string &_name,const std::string &_title)
 
     delete h;
     
-    h = new TH1F(name.c_str(),_title.c_str(),100,-0.2,0.2);
+    h = new TH1F(name.c_str(),_title.c_str(),bins,-rmax,rmax);
     h -> SetDirectory(NULL);
     h -> GetXaxis()->SetTitle("Distance [cm]");
     h -> GetYaxis()->SetTitle("Entries");
@@ -389,37 +389,38 @@ void V::Residual::Book(const std::string &_name,const std::string &_title)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void V::FillResidualPlots(VFitResult &result)
+void V::FillResidualPlots(VFitResult &result,float r_limit,unsigned int bins,float r_max)
 {
     if( result.rt==NULL )
         throw "V::FillResidualPlots(): RT is unknown.";
 
     FillResidualPlot("resFIT",
                      &result.residuals_corr[0],&result.residuals_corr[1],&result.residuals_corr[2],
-                     result.vdata,*result.rt,result.t0,result.w0);
+                     result.vdata,*result.rt,result.t0,result.w0,r_limit,bins,r_max);
 
     if( result.t0_ref!=0 )
     {
         FillResidualPlot("resCORAL",
                          &result.residuals_ref[0],&result.residuals_ref[1],&result.residuals_ref[2],
-                         result.vdata,*result.rt,result.t0_ref,result.w0);
+                         result.vdata,*result.rt,result.t0_ref,result.w0,r_limit,bins,r_max);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void V::FillResidualPlot(const std::string &name, Residual *res_all,Residual *res_left,Residual *res_right,
-                         const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit)
+                         const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit,
+                         unsigned int bins,float r_max)
 {
     if( name!="" )
     {
         // We book the histograms here!
         if( res_all!=NULL )
-            res_all->Book(name,name+" residuals");
+            res_all->Book(name,name+" residuals",bins,r_max);
         if( res_left!=NULL )
-            res_left->Book(name+"l",name+" residuals of the left leg");
+            res_left->Book(name+"l",name+" residuals of the left leg",bins,r_max);
         if( res_right!=NULL )
-            res_right->Book(name+"r",name+" residuals of the right leg");
+            res_right->Book(name+"r",name+" residuals of the right leg",bins,r_max);
     }
 
     RTRelation *rt = rt_orig.Clone();

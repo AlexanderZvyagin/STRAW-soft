@@ -84,7 +84,7 @@ class V
         Residual (void) : h(NULL), fit_func(NULL),points_taken(0),points_rejected(0) {}
         ~Residual(void);
         
-        void    Book    (const std::string &name,const std::string &title);
+        void    Book    (const std::string &name,const std::string &title,unsigned int bins=100,float rmax=0.2);
         
         /*! \brief Fit the residual plot.
         */
@@ -337,7 +337,7 @@ class V
     /// Make a report about the fit.
     virtual TCanvas*    MakeReport              (const V::VFitResult &result);
 
-    virtual void        FillResidualPlots       (VFitResult &result);
+    virtual void        FillResidualPlots       (VFitResult &result,float r_limit=100,unsigned int bins=100,float r_max=0.2);
 
     /*! \brief Fill residual plot
         \param res_all    Residual to be filled with both left and right V legs
@@ -349,7 +349,8 @@ class V
         \param w0       V-plot misalignment.
     */
     virtual void        FillResidualPlot        (const std::string &name, Residual *res_all,Residual *res_left,Residual *res_right,
-                                                 const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit=100);
+                                                 const std::vector<VData> &vdata,const CS::RTRelation &rt_orig,float t0,float w0,float r_limit=100,
+                                                 unsigned int bins=100,float rmax=0.2);
     
     /*! \brief Fill time difference plot
         \param ht       Empty histogram to be filled.
