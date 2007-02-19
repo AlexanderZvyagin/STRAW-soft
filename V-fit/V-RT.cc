@@ -31,6 +31,7 @@ void (*VDestroy)(V *v) = VDestroy_default;
 V *v_code=VConstruct_default();
 } // namespace
 
+float V_leg_max_dist    = 9e9;
 int minuit_printout     = -1;
 int minuit_max_calls    = 10000;
 
@@ -74,6 +75,7 @@ void RT_fit(V::VFitResult &result)
 
     result.r  = result.rt->GetRMax();
     result.dt = result.rt->GetTMax();
+    result.V_leg_max_dist = V_leg_max_dist;
 
     char title[result.comment.size()+33];
     sprintf(title,"Session \"%s\"",result.comment.c_str());
@@ -131,6 +133,8 @@ int main(int argc,const char *argv[])
                                           "Minuit: maximum number of function calls.", "INTEGER" },
             { "RT",         '\0', POPT_ARG_STRING,  &rt_string,                             0,
                                           "Starting RT relation", "STRING" },
+            { "V-leg-dist", '\0', POPT_ARG_FLOAT|POPT_ARGFLAG_SHOW_DEFAULT,  &V_leg_max_dist, 0,
+                                          "For V-fit: maximum distance between RT-leg and a V-plot point.", "FLOAT" },
             { "t0-start",   '\0', POPT_ARG_FLOAT,  &result.t0_start, 0,
                                           "Starting value for t0 calculation. If not given, "
                                           "it is taken from --t0-ref option or (if it the option is missing) "
