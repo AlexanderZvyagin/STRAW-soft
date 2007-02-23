@@ -1,7 +1,3 @@
-##  @addtogroup STRAW
-##  @{
-
-
 ##Module to read detector.dat files... in construction
 #To do :
 #1- Function that compare position for same detector in two different years (especially for z position)
@@ -20,10 +16,14 @@ fname_dic = {2002:'/afs/cern.ch/compass/detector/geometry/2002/detectors.22018.m
 
 straw_dic = {'stw_diam':{'b':0.6144,'a':0.9654,'c':0.9654},'stw_length':{'X':302.8,'Y':365.8,'U':302.8,'V':302.8}}
 
-def det_val(det,value,year):
-    ##Returns value from detector det in specified year
+def det_val(det,value,ddat):
+    ##Returns value from detector det in ddat, ddat can be either a year of a path to a detector.dat file
+    if ddat in (2002,2003,2004,2006):
+        ddatfile = open(fname_dic[ddat])
+    else:
+        ddatfile = open(ddat)
     val_dic ={}
-    ddatfile = open(fname_dic[year])
+    #ddatfile = open(fname_dic[year])
     for l in ddatfile.readlines():
         ls_1 = l.split()
         ls = []
@@ -69,7 +69,7 @@ def det_val(det,value,year):
                     print k
                 return
     #When nothing is found
-    print '%s not found for year %d!'%(det,year)
+    print '%s not found in %d!'%(det,year)
  
 
 def num_wire(det):
@@ -177,4 +177,10 @@ def scan_1w_dist(year):
 
 
 
-##  @}
+
+#def dif_fw(det1,det1, year):
+#    ##Gives the diff btw the 1st wire of the 2 given dtr for the given year    
+#    return 
+
+#print det_val('ST03X1ua','ycen',2004)
+#print det_val('st03x1ua','ycen',2004)
