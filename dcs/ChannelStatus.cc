@@ -431,7 +431,7 @@ void ChannelStatus::ReadTemperature(void)
     // First we read the measurements.    
     vector<TSQLRow*> measurements;
     TSQLResult *table = get_measurements(db,"dcs.Temperature",t1,t2,
-                                         "AND detector='ST05U1' AND sensor='TMJ'",
+                                         "AND detector='ST05X1' AND sensor='TMJ'",
                                          measurements);
 
     if( measurements.empty() )
@@ -544,7 +544,7 @@ void ChannelStatus::ReadCurrent(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ChannelStatus::DrawInOneWindow(void)
+void ChannelStatus::DrawInOneWindow(const std::string &options)
 {
     char name[111], title[111];
     sprintf(name,"hStatus_%s_%s",detector.c_str(),channel.c_str());
@@ -572,6 +572,9 @@ void ChannelStatus::DrawInOneWindow(void)
         g_HV->Draw("PL");
         canvas->Update();
     }
+
+    if( options.find('T')!=std::string::npos )
+        SetDrawTemperature(true);
 
     if( NULL!=g_Temperature )
     {
