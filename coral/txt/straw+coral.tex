@@ -1,15 +1,15 @@
 \documentclass[a4paper,12pt]{article}
     \input epsf
-    \author{Alexander Zvyagin}
-    \title{STRAW+CORAL test}
+    \author{Alexander Zvyagin, Jeanfransoi Rajote, Richard Bennett}
+    \title{Employment of CORAL+PHAST for STRAW data test}
     \date{January 2006}
 
 \begin{document}
 \maketitle
 
     \begin{abstract}
-        How to create an automatic report to test straw tubes detector
-        performance in a framework of the COMPASS reconstruction program.
+        We describe how to create an automatic report to test straw tubes detector
+        performance in a framework of the COMPASS reconstruction programme.
         %The pictures description of the report is given as well.
     \end{abstract}
 
@@ -22,89 +22,89 @@ Doing {\bf STDC} analysis in the {\bf CORAL+PHAST} framework we are sensitive
 to
 \begin{itemize}
 \item performance of the {\bf CORAL} software (because we use {\bf CORAL}
-tracks to expose the {\bf STDC} planes and without a good ones our results
+tracks to expose the {\bf STDC} planes and without good ones our results
 are meaningless);
 \item software description of {\bf STDC};
 \item hardware performace of {\bf STDC}.
 \end{itemize}
-In the present document it is described how to perform a such analysis and
+In the present document we describe how to perform such a analysis and
 understand its results.
 
-The document starts from a terminology section. Then a major plan in the
+The document starts with a terminology section which everybody in our group should be familiar with. Then a major plan in the
 analysis is presented. A detailed description of the {\it how-to-do} process
-is given next. And finaly it is described the pictures made by an automatic
-report producer.
+is given next. Finally, the pictures made by an automatic
+report producer are presented.
 
 \section{Terminology}
 \begin{description}
-\item[COMPASS] It is the name of our experiment.
-\item[CORAL] COMPASS reconstruction program.
-\item[PHAST] COMPASS data analysis framework.
-\item[CORAL+PHAST] Program with both {\bf CORAL} and {\bf PHAST} features.
-\item[ROOT] Software designed for data analysis (see {\it http://root.cern.ch}).
-\item[mDST] Micro-DST root file, output of the {\bf PHAST} program.
+\item[COMPASS] is the name of our experiment.
+\item[CORAL] COMPASS reconstruction programme
+\item[PHAST] COMPASS data analysis framework
+\item[CORAL+PHAST] programme with both {\bf CORAL} and {\bf PHAST} features
+\item[ROOT] software designed for data analysis (see {\it http://root.cern.ch})
+\item[mDST] Micro-DST root file, output of the {\bf PHAST} programme
 \item[DST] Data Summary Tape - a historical name for a collection of
-      reconstructed events from an experiment in high energy physics.
-\item[STDC] Straw Tubes Drift Chamber.
-\item[DC] Saclay drift chamber.
-\item[W45] Huge drift chamber with a strange name W45.
-\item[Spacer] Small piece of plastic (approximately $3 \times 10 mm^2$) to hold a wire
+      reconstructed events from an experiment in high energy physics
+\item[STDC] Straw Tubes Drift Chamber
+\item[DC] Saclay drift chamber
+\item[W45] Huge drift chamber with a strange name W45
+\item[Spacer] Small piece of plastic (approximately $3 \times 10~\mathrm{mm}^2$) to hold a wire
       in tube center.
 \item[Xray] X-ray setup to scan the geometry of {\bf STDC} to determinate
-        the position of all spacers.
+        the position of all spacers
 \item[Xray corrections] Results of a Xray scan. These are mainly
-        (x,y) coordinates of the spacers.
-\item[DL] Double Layer - one {\bf STDC} physical detector. Physycally it is
-        constracted from a two layers. A single layer is divided to 3 parts,
-        so totally one physical {\bf STDC} detector consists of 6 smaller
+        (x, y) coordinates of the spacers.
+\item[DL] Double Layer - one {\bf STDC} physical detector. Physically it is
+        constructed from two layers. A single layer is divided into 3 parts,
+        so in total one physical {\bf STDC} detector consists of 6 smaller
         detectors.
 \item[Layer] One half of a DL. Single layer consists of two 10mm
-        straw tubes sections and one 6mm straw tubes section.
-\item[Section] One of a two 10mm straw tubes parts or a 6mm part of
-        a layer. A section name has a form {\bf ST05X1db}. The first two
-        letters are always {\bf ST} - they inidcate that this is a {\bf STDC}
-        detector. The next number {\bf 05} is a {\bf STDC} station number.
-        Next letter {\bf X} indicates the section projection angle. There are four
-        possible orientations: X,U,V,Y. After the projection letter it goes number
+        straw tubes sections and one 6 mm straw tubes section.
+\item[Section] One of two 10 mm straw tubes parts, or a 6mm part of
+        a layer: a section name has the form {\bf ST05X1db}. The first two
+        letters always are {\bf ST} - they inidcate that this is an {\bf STDC}
+        detector. The next number {\bf 05} is an {\bf STDC} station number.
+        The subsequent letter {\bf X} indicates the section projection angle. There are four
+        possible orientations: X, U, V, Y. After the projection letter we encounter the number
         {\bf 1} - the counter of sections with the same projection in a given station.
-        This number is usually always 1, and in a few cases it goes to 2.
+        This number is usually 1, and in a few cases it goes to 2.
         The letter {\bf d} identifies one of the two layers - it stands for an
         {\bf u}pstream or a {\bf d}ownstream layer. The very last letter {\bf b}
         says that the section
-        consists of 6mm straw tubes. For the 10mm straw tubes the letter would have been
+        consists of 6 mm straw tubes. For the 10 mm straw tubes the letter would have been
         {\bf a} or {\bf c}.
 \item[Smooth point] The term is used in tracking. When a track is fitted and its parameters
         are known, you may calculate track parameters at any point along the track. But this can
         be done with a better precison if you tell to the tracking algorithm in advance that you want
         to know the track parameters at a specfic position. This position is called {\it smoothing point}.
-\item[detectors.dat or detectors-dat file] COMPASS geometry description used by {\bf CORAL}.
-\item[CVS] Version control system - tracker of a source code modifications.
+\item[detectors.dat or detectors-dat file] COMPASS geometry description used by {\bf CORAL}
+\item[CVS] Version control system - tracker of a source code modifications
 \item[CASTOR] Storage file system for a big volumes at CERN.
 \item[residual] Spatial distance between a reconstructed track and a wire $\pm$ drift distance.
       If $t$ is a track coordinate, $w$ is a wire position and $d$ is a drift distance, then
-      $$residual = \left\{
+      $residual = \left\{
         \begin{array}{ll}
             t-(w+d) & \mbox{if  } |t-(w+d)|<|t-(w-d))| \\
             t-(w-d) & \mbox{if  } |t-(w+d)|\geq|t-(w-d))|
         \end{array}
-        \right.
-      $$
+        \right. .
+      $
       Briefly speaking, residual is a shortest distance between track and wire $\pm$ drift distance.
-\item[Albert's plots] The set of plots from Albert Lehman used for plotting the {\bf CORAL} residuals.
-\item[MRS] Master Reference System of the COMPASS experiment. Y-axis goes from bottom to top.
-         Z-axis is in the direction of beam. X-axis is from Saleve to Jura.
-\item[DRS] Detector Reference System. In DRS all wires (of {\bf STDC} tubes) are positioned along Y-axis.
-         Z-coordinate is 0 (so DRS has dimensions). Please note that this definition of detector 
-         reference system differs from the one given by {\bf CORAL} and it is equivalent to the {\bf CORAL}' wire 
+\item[Albert's plots] The set of plots from Albert Lehman which are used for plotting the {\bf CORAL} residuals.
+\item[MRS] Master Reference System of the COMPASS experiment. $y$-axis goes from bottom to top.
+         $z$-axis is in the direction of beam. $x$-axis runs from Saleve to Jura.
+\item[DRS] Detector Reference System. In DRS all wires (of {\bf STDC} tubes) are positioned along the $y$-axis.
+         The $z$-coordinate is 0 (so DRS has dimensions). Please note that this definition of the detector 
+         reference system differs from the one given by {\bf CORAL} and it is equivalent to the {\bf CORAL} wire 
          reference system definition.
 \item[Ntuple] Specially organized data storage to simplify its data analysis.
 \end{description}
 
 \section{Steps in making the report}
 
-Here are the main steps in the process.
+Here are the main steps in the process:
 
-\begin{itemize}
+\begin{enumerate}
 \item Install {\bf CORAL}, patch it, compile it. 
 \item Install {\bf PHAST}, patch it, compile it.
 \item Prepare {\bf CORAL+PHAST} options file.
@@ -362,7 +362,7 @@ may be found in the file with name {\bf StrawXray-2003-Xray-0.ps}.
 %         The green histogram represents what residuals one could expect if the X-ray
 %         corrections are applied. Black, red and green straight lines - result of a line
 %         fit of an appropriate histogram. Non-horizontal red line indicates that pitch
-%         size was calculated wrongly by the COMPASS alignment program.
+%         size was calculated wrongly by the COMPASS alignment programme.
 % \item [right plots] For every histogram (black,red,green) it is plotted the
 %         projection of a histogram points along the fit line on the left plot. The RMS
 %         shows how big the spread of points is. The RMS of a green histogram indicates
