@@ -194,7 +194,6 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         
         int dcs;
         char detector[55], sensor[55];
-        
         // Decode DCS module and channel
         char *slash = strrchr(channel_name,'/'), *char_=strchr(slash,'_');
         assert( strlen(slash)<sizeof(detector) );
@@ -205,11 +204,14 @@ void db_write_temperature(TSQLServer *db,const char *file_name)
         }
         else
             printf("Can not decode name: %s\n",channel_name);
-        
-        sprintf(buf,"REPLACE INTO dcs.Temperature (time,detector,sensor,temperature) VALUES(%s,'%s','%s',%g);",
-                timestamp,detector,sensor,temperature);
-        if( !db->Query(buf) )
-            printf("**** FAILED: %s\n",buf);
+
+        if( 0==strncmp("ST",detector,2) )
+	{
+            sprintf(buf,"REPLACE INTO dcs.Temperature (time,detector,sensor,temperature) VALUES(%s,'%s','%s',%g);",
+                    timestamp,detector,sensor,temperature);
+            if( !db->Query(buf) )
+                printf("**** FAILED: %s\n",buf);
+        }
     }
 
     fclose(f);    
