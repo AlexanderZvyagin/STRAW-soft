@@ -1,15 +1,15 @@
 \documentclass[a4paper,12pt]{article}
     \input epsf
-    \author{Alexander Zvyagin, Jeanfransoi Rajote, Richard Bennett}
-    \title{Employment of CORAL+PHAST for STRAW data test}
-    \date{January 2006}
+    \author{Alexander Zvyagin, Jeanfrancois Rajotte, Richard Bennett}
+    \title{Employment of CORAL+PHAST for STRAW Data Test}
+    \date{January 2006 and March 2007}
 
 \begin{document}
 \maketitle
 
     \begin{abstract}
-        We describe how to create an automatic report to test straw tubes detector
-        performance in a framework of the COMPASS reconstruction programme.
+        We describe how to create a report of the performance of the straw tube detector
+        in the framework of the COMPASS reconstruction programme.
         %The pictures description of the report is given as well.
     \end{abstract}
 
@@ -82,13 +82,13 @@ report producer are presented.
 \item[CASTOR] Storage file system for a big volumes at CERN.
 \item[residual] Spatial distance between a reconstructed track and a wire $\pm$ drift distance.
       If $t$ is a track coordinate, $w$ is a wire position and $d$ is a drift distance, then
-      $residual = \left\{
+      $$residual = \left\{
         \begin{array}{ll}
             t-(w+d) & \mbox{if  } |t-(w+d)|<|t-(w-d))| \\
             t-(w-d) & \mbox{if  } |t-(w+d)|\geq|t-(w-d))|
         \end{array}
         \right. .
-      $
+      $$
       Briefly speaking, residual is a shortest distance between track and wire $\pm$ drift distance.
 \item[Albert's plots] The set of plots from Albert Lehman which are used for plotting the {\bf CORAL} residuals.
 \item[MRS] Master Reference System of the COMPASS experiment. $y$-axis goes from bottom to top.
@@ -100,164 +100,75 @@ report producer are presented.
 \item[Ntuple] Specially organized data storage to simplify its data analysis.
 \end{description}
 
-\section{Steps in making the report}
+\section{Steps in Making the Report}
 
 Here are the main steps in the process:
 
 \begin{enumerate}
-\item Install {\bf CORAL}, patch it, compile it. 
+\item Install {\bf CORAL}, compile it. 
 \item Install {\bf PHAST}, patch it, compile it.
 \item Prepare {\bf CORAL+PHAST} options file.
 \item Run {\bf CORAL}+{\bf PHAST} and produce output root files.
-\item Run script over the root files to create the final report.
-\end{itemize}
+\end{enumerate}
 
-\subsection{{\bf CORAL} installation}
-\subsubsection{Install {\bf CORAL} source code}
-Install {\bf CORAL} source files from {\bf CVS}.
-\subsubsection{Increase the size of {\it TOpt::SmoothPos} container}
-In the file {\it CORAL/src/track/traffic/includes/TOpt.h} change the line
+\subsection{{\bf CORAL} Installation}
+Download and unzip according to instructions on the web ({\it http://coral.web.cern.ch/coral/build.php}). Make sure to use a directory which will easily take up 100 MB. Download installation files:
+\begin{enumerate}
+ \item Install coral:
+ \begin{verbatim}
+> setenv CVSROOT :kserver:isscvs.cern.ch:/local/reps/coral
+> cvs checkout coral
+> cd coral/ 
+ \end{verbatim}
+ \item Choose configuration for setup:
+ \begin{verbatim}
+ ./config --without-ORACLE 
+ \end{verbatim}
+ Search config options with: {\tt ./config --help}
+ \item Setup coral application:
+ \begin{verbatim}
+> . setup.sh  
+ \end{verbatim}
+\item Compile CORAL:
 \begin{verbatim}
-static double  SmoothPos[10];
+ > make
 \end{verbatim}
-to
+\item Copy makefile and new file from STRW-soft.git:
 \begin{verbatim}
-static double  SmoothPos[300];
+> cp .../STRAW-soft.git/coral/phast+coral/* <phast>/coral/
 \end{verbatim}
-and another line
+\item Remove a file in {\tt /<phast>/coral/}:
 \begin{verbatim}
-double TOpt::SmoothPos[10];
+> rm CoralDetDR.cc
 \end{verbatim}
-to
+\item Modify {\tt <phast>/coral/DstProdMon.cc} by commenting out the following lines:
 \begin{verbatim}
-double TOpt::SmoothPos[300];
+bool CoralUserSetup(int argc, char* argv[]) { return true; }
+bool CoralUserInit ()                       { return true; }
+bool CoralUserEvent()                       { return true; }
+bool CoralUserEnd  ()                       { return true; }
 \end{verbatim}
-This allows to calculate track parameters precisely at the position of
-{\bf STDC} planes. Moreover, Albert's plots will not be filled without track
-parameters calculated at the position of {\bf STDC} planes.
-\subsubsection{Make it possible to analyse DriftChambers and W45 detectors as well}
-These modifications are optional. If you apply the changes mentiond below you
-will have an oppotunity to analysis other drift-type detectors.
-
-You may copy the pieces of code sections mentioned below from
-the source file \mbox{\it CORAL/src/geom/CsStrawTubesDetector.cc}.
-
-In the two files
-\begin{description}
-\it
-\item[] CORAL/src/geom/CsDriftChamberDetector.cc
-\item[] CORAL/src/geom/CsDWDetector.cc
-\end{description}
-apply the following changes:
-\begin{itemize}
-\item Include the extra header file:
+\item Compile PHAST:
 \begin{verbatim}
-#include "Detectors/Detector.h"
+> make
 \end{verbatim}
-\item In the function {\it DecodeChipDigit(const CS::Chip::Digit \&digit)}
-change the line
+\end{enumerate}
+The modified Coral can now be used like this :
 \begin{verbatim}
-myDigits_.push_back( new CsDigit(*this,ch,&time,1) );
+> coral.exe <coral-option-file>
 \end{verbatim}
-to the following lines:
-\begin{verbatim}
-CS::ChipF1::DataID id(digit.GetDataID());
+The output is a root file which contains the ntuple for straw analysis.
 
-vector<double> data;
-data.push_back(time);                // time in slices
-data.push_back(d->GetChannelPos());  // channel position
-data.push_back(d->GetTimeDecoded()); // time in [ns]
-data.push_back(id.u.s.src_id);       // data source id
-data.push_back(id.u.s.geoID_or_port);// card address
-data.push_back(id.u.s.chip_chan);    // electronic channel
-
-myDigits_.push_back( new CsDigit(*this, d->GetChannel(), 
-                                  &data[0],data.size()));
-\end{verbatim}
-
-\item In the function {\it readCalibration(int timePoint)} at the very begining of it,
-add the following code:
-\begin{verbatim}
-if( alt_detectors==NULL )
-{
-    // Create detector description from detectors.dat file
-    alt_detectors = new CS::Detectors;
-    alt_detectors->ReadDetectorsDAT(
-                *CsInit::Instance()->getDetectorTable());
-}
-
-delete alt_det;
-alt_det = NULL;
-
-try
-{
-    alt_det = &alt_detectors->Find(GetTBName());
-}
-catch(...)
-{
-}
-\end{verbatim}
-\end{itemize}
-
-\subsubsection{Fix CORAL bug}
-In the file {\it CORAL/src/track/traffic/sources/TTrackGetSmoothed.cc}
-find the code segment
-\begin{verbatim}
-if(!found){
-  cout<<"TTrack::GetSmoothed(THlx&, double) ==> Can't find ...
-  this->Print(0);
-  this->Print(1);
-  this->Print(2);
-  this->Print(3);
-
-  exit(1);
-}
-\end{verbatim}
-and replace {\it exit(1);} to {\it return -1;}.
-
-\subsubsection{CORAL compilation}
-After these steps one can compile {\bf CORAL} with the standard procedure.
-
-\subsection{{\bf PHAST} installation}
-Install {\bf PHAST}, compile it. Go to the directory {\it PHAST/coral}.
-And run the following command:
-\begin{verbatim}
-$ tar xjf /afs/cern.ch/compass/detector/straw\
-/src/phast-coral-mod.tar.bz2
-\end{verbatim}
-This will extract the files needed for {\bf STDC} ntuples generation and
-for filling the Albert's histograms.
-
-One have to exclude from the compilation file {\it DstProdMon.cc}. This can be
-achived by renaming this file to another one without the {\it .cc} extension,
-for example:
-\begin{verbatim}
-$ mv DstProdMon.cc DstProdMon.cc.
-\end{verbatim}
-
-\subsection{CORAL option file}
+\subsection{CORAL Option File}
 Take the most recent version of an option file for {\bf CORAL+PHAST}.
 It can be found in the {\it CORAL/src/user} directory.
-\subsubsection{Activation of X-ray corrections}
+\subsubsection{Activation of X-ray Corrections}
 To activate the X-ray corrections you have to add the line:
 \begin{verbatim}
 STRAW settings spacers=YES
 \end{verbatim}
 
-\subsubsection{Adding smoothing points at {\bf STDC} positions}
-To be able to fill Albert's histogram one should add a set of smoothing points for tracking at the positions
-of the {\bf STDC} (add {\bf DC} and {\bf W45} if you want to analyze them as well). It looks like this:
-\begin{verbatim}
-TraF SmoothPos [0-4]    534.3970  534.5725  534.3970  535.4130
-TraF SmoothPos [5-9]    539.2375  539.4130  542.3970  542.5725
-\end{verbatim}
-The list of smooth points depends on the detectors-dat file. You can get the list of all smooth points
-which you have to put inside your {\bf CORAL} option file with the aid of the following command:
-\begin{verbatim}
-cat detectors.dat | grep det | grep ST.....b | awk '{print $11}'
-\end{verbatim}
-
-\subsubsection{Clusters modification}
+\subsubsection{Clusters Modification}
 X-ray corrections are applied at the same time as signal propagation time is
 corrected. But the original cluster's positions are not changed. So with the
 standard option file {\it CORAL/pkopt/trafdic.YYYY.opt} with the line
@@ -271,57 +182,20 @@ line in your {\bf CORAL} option file {\it after} an inclusion of {\it trafdic.YY
 TraF	ReMode	[29]	7
 \end{verbatim}
 
-\subsubsection{Mini DST creation (optional)}
+\subsubsection{Mini DST Creation (optional)}
 If you do not want to generate the mDST files, comment out the line
 \begin{verbatim}
 mDST    file            mDST.root
 \end{verbatim}
 
-\subsubsection{Extra histograms (optional)}
+\subsubsection{Extra Histograms (optional)}
 To fill some extra histograms, add this:
 \begin{verbatim}
 ST hist level high
 \end{verbatim}
 
-\subsection{Run CORAL}
-This is not going to be easy. To make a report of an {\it absolute minimal} quality you
-need to analyze about twenty thousands events. Having the {\bf CORAL} reconstruction
-speed equal to approximately two events per second it leads to a three hours of
-computations and two hundreds of megabytes output root file size. Your desktop computer
-may stand this. But to make a good quality report
-you will need to analyze one full run. This is about three hundreds times events
-more. This can not be done on a single computer. You
-have to use the CERN batch system and put your huge output files to {\bf CASTOR}.
-
-The commands to run the jobs are here:
-\begin{verbatim}
-$ export CORAL="/path/to/coral"
-$ export PHAST="/path/to/phast"
-$ rfmkdir /castor/cern.ch/user/z/your_name/37059
-$ cd $CORAL
-$ . setup.sh
-$ cd $PHAST/coral
-$ /afs/cern.ch/compass/detector/straw/bin/cs lsf \
- --queue=1nd cs --coral --run=37059 --opt=trafdic.opt \
- --todir=/castor/cern.ch/user/z/your_name/37059 \
- $PWD/coral.exe
-\end{verbatim}
-
-\subsection{Combining the CORAL output files togerther}
-\label{CORAL-merge}
-The output files are located in directory
-\begin{verbatim}
-/castor/cern.ch/user/z/your_name/37059
-\end{verbatim}
-The next step is to merge them togerther. This can be done with the help of
-{\it hadd.C} {\bf ROOT} script. The {\bf CORAL} exercise is finished once you merged the
-files. Before merging them you may consider to copy the root files from {\bf CASTOR} to
-your local hard disk (use the command {\it rfcp}).
-
-
-
-\section{Making the report}
-\subsection{Residuals versus channel}
+\section{Making the Report}
+\subsection{Residuals versus Channel}
 Lets suppose that your output file name after {\bf CORAL} finished it work
 has name {\it coral.root}. To create the report you have start root
 and execute the following commands in it (it is assumed that the {\it PHAST}
@@ -371,55 +245,55 @@ may be found in the file with name {\bf StrawXray-2003-Xray-0.ps}.
 % \end{description}
 
 \newpage
-\appendix{This is appendix}
-\section{Ntuple variables description}
+\begin{appendix}
+\section{ntuple Variables Description}
 \label{ntuple-variables}
 This is the description of variables from an ntuples with the
-name like {\it ST03X1db\_CORAL}.
+name like {\tt ST03X1db\_CORAL}.
 \begin{description}
-\item[x] X-coordinate in MRS of track interaction with the detector.
-\item[y] Y-coordinate in MRS of track interaction with the detector.
-\item[z] Z-coordinate in MRS of track interaction with the detector. It must be exactly the same
+\item[x] $x$-coordinate in MRS of track interaction with the detector
+\item[y] $y$-coordinate in MRS of track interaction with the detector
+\item[z] $z$-coordinate in MRS of track interaction with the detector -- must be exactly the same
          for all entries of the same ntuple (the same detector).
-\item[wx] X-coordinate in DRS of track interaction with the detector.
-\item[wy] Y-coordinate in DRS of track interaction with the detector.
-\item[wz] it should be always zero, by definition of the detector referense system (DRS).
-\item[ax] track angle: $dx/dz$ ?
-\item[ay] track angle: $dy/dz$ ?
-\item[src] Catch source ID of the card which sent data.
-\item[geo] Geographical address of the card which sent data.
-\item[ech] Channel number of an electronic card which sent data.
-\item[ch]  Detector channel number
-\item[chp] Detector channel position (0,-1,+1)
-\item[chx] Channel coordinate in DRS.
-\item[t]   Time of the hit (no $T_0$ substraction).
-\item[r]   Drift distance (RT is applied)
-\item[d]   Distance between track and wire.
-\item[ch2]    Detector channel number of the second layer with an associated hit
-\item[t2]     Time of the associated hit
-\item[r2]     Drift distance of the associated hit
-\item[d2]     Residual of the associated hit
+\item[wx] $x$-coordinate in DRS of track interaction with the detector
+\item[wy] $y$-coordinate in DRS of track interaction with the detector
+\item[wz] $z$-coordinate in DRS of track interaction with the detector -- should be always zero, by definition of the detector referense system (DRS).
+\item[ax] track angle $=dx/dz$
+\item[ay] track angle $=dy/dz$
+\item[src] catch source ID of the card which sent data
+\item[geo] geographical address of the card which sent data
+\item[ech] channel number of an electronic card which sent data
+\item[ch]  detector channel number (ch < 0 denotes a track which crossed the detector without being detected)
+\item[chp] detector channel position (0, -1, +1)
+\item[chx] channel coordinate in DRS
+\item[t]   time of the hit (no $T_0$ substraction)
+\item[r]   drift distance (RT is applied)
+\item[d]   distance between track and wire
+\item[ch2]    detector channel number of the second layer with an associated hit
+\item[t2]     time of the associated hit
+\item[r2]     drift distance of the associated hit
+\item[d2]     residual of the associated hit
 \item[cor\_sp]   X-ray correction (spacer correction) applied to this hit
 \item[cor\_spt]  Signal propagation time correction applied to this hit
-\item[tr\_Xi2] track's $\chi^2$
-\item[tr\_X0]  track's accumulated radiation length
-\item[tr\_t]   track's time
-\item[tr\_res] track's resolution
+\item[tr\_Xi2] $\chi^2$ of the track
+\item[tr\_X0]  accumulated radiation length of the track
+\item[tr\_t]   time of the track
+\item[tr\_res] resolution of the track
 \item[tr\_nh]  number of track hits
-\item[tr\_q]   track's charge divided by momentum
-\item[tr\_z1]  Z coordinate (MRS) of a first track's cluster
-\item[tr\_z2]  Z coordinate (MRS) of a last track's cluster
-\item[v1,v2,*] Additional varaibles.
+\item[tr\_q]   charge of the track divided by momentum
+\item[tr\_z1]  $z$-coordinate (MRS) of a first track's cluster
+\item[tr\_z2]  $z$-coordinate (MRS) of a last track's cluster
+\item[v1,v2,*] additional variables
 \end{description}
 
-New entry to a ntuple is added every time when a track crosses the detector surface.
-If a {\bf STDC} hit corresponding to the track was not found then ntuple variable for
+New entry to an ntuple is added every time a track crosses the detector surface.
+If an {\bf STDC} hit corresponding to the track was not found then ntuple variable for
 the channel number $ch=-1$. Other variables related to a {\bf STDC} hit informatin are
-meaningles: {\it src,geo,ech,ch,chp,chx,t,r,ch2,t2,r2,d2}.
+meaningless: {\it src, geo, ech, ch, chp, chx, t, r, ch2, t2, r2, d2}
 
 
-\section{How to make simple plots}
-Let's consider that the output root file from {\bf CORAL} has name {\it coral.root}.
+\section{How to Make Simple Plots}
+Let us consider that the output root file from {\bf CORAL} has name {\it coral.root}.
 This file may be one of the files created by {\bf CORAL} or a result of the merge of all
 your {\bf CORAL} output files, see Section \ref{CORAL-merge}. We start a {\bf ROOT} session
 by running the following command from a command prompt:
@@ -428,11 +302,10 @@ $ root coral.root
 \end{verbatim}
 Once root has started you may type {\it .ls} to see the list of objects in your
 {\it coral.root} file. Among those objects there are ntuples with the names like
-{\it ST03X1db\_CORAL}. See Section \ref{ntuple-variables} for description of
+{\tt ST03X1db\_CORAL}. See Section \ref{ntuple-variables} for description of
 variables in the ntuple. The list of all variables may be obtained by running the command
-\begin{verbatim}
-ST03X1db_CORAL.Show()
-\end{verbatim}
+{\tt ST03X1db\_CORAL.Show()}.
+
 
 To make a plot you shoud type something like this:
 \begin{verbatim}
@@ -441,14 +314,13 @@ ST03X1db_CORAL.Draw("t:d","ch>=0")
 Which will plot two dimensional distribution of variable {\it t} versus variable {\it d}
 with the events selection {\it ch>=0}.
 
-\subsubsection{Simple plots}
+\subsection{Other Simple Plots}
 
-\begin{description}
-\item[$Draw("x:y","")$] Distribution of tracks which cross the detector, in MRS
-\item[$Draw("wx:wy","")$] Distribution of tracks which cross the detector, in DRS
-\item[$Draw("r:t","r>=0")$] RT-relation
-\end{description}
+\begin{verbatim} Draw("x:y","") \end{verbatim} Distribution of tracks which cross the detector, in MRS \\
+\begin{verbatim} Draw("wx:wy","") \end{verbatim} Distribution of tracks which cross the detector, in DRS \\
+\begin{verbatim} Draw("r:t","r>=0") \end{verbatim} RT-relation
 
+\end{appendix}
 %/afs/cern.ch/compass/detector/calibrations/tools/bin/
 
 \end{document}
