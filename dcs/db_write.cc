@@ -239,15 +239,15 @@ void db_write_hall_pressure_temperature(TSQLServer *db,const char *file_name)
 
     while( NULL!=(s=fgets(buf,sizeof(buf),f)) )
     {
-        char dcs_name[33];
+        char dcs_name[37],junk[13];
         float v;
-        int year=2004,month,day,hour,min,sec;
+        int year,month,day,hour,min,sec;
 
         // remove the end-of-line
         if( strlen(s)>0 && s[strlen(s)-1]=='\n' )
             s[strlen(s)-1]=0;
 
-        if( 7!=sscanf(s,"%s %g %d %d %d %d %d",dcs_name,&v,&month,&day,&hour,&min,&sec) )
+        if( 9!=sscanf(s,"%s %s %g %d %d %d %d %d %d",dcs_name,junk,&v,&year,&month,&day,&hour,&min,&sec) )
         {
             if( debug )
                 printf("Can not read line \"%s\"\n",s);
@@ -257,17 +257,17 @@ void db_write_hall_pressure_temperature(TSQLServer *db,const char *file_name)
         char timestamp[22];
         sprintf(timestamp,"%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d",year,month,day,hour,min,sec);
 
-        if( 0==strcmp(dcs_name,"Patm_hall") )
-            sprintf(buf,"REPLACE INTO dcs.Hall_pressure (time,pressure) VALUES(%s,%g);",
-                    timestamp,v);
-        else
-        if( 0==strcmp(dcs_name,"AirTemp") )
+       // if( 0==strcmp(dcs_name,"Patm_hall") )
+         //   sprintf(buf,"REPLACE INTO dcs.Hall_pressure (time,pressure) VALUES(%s,%g);",
+           //         timestamp,v);
+        //else
+        if( 0==strcmp(junk,"Env/T_Outside") )
             sprintf(buf,"REPLACE INTO dcs.Hall_temperature (time,temperature) VALUES(%s,%g);",
                     timestamp,v);
-        else
-        if( 0==strcmp(dcs_name,"Hum1_HAll") )
-            sprintf(buf,"REPLACE INTO dcs.Hall_humidity (time,humidity) VALUES(%s,%g);",
-                    timestamp,v);
+        //else
+        //if( 0==strcmp(dcs_name,"Hum1_HAll") )
+          //  sprintf(buf,"REPLACE INTO dcs.Hall_humidity (time,humidity) VALUES(%s,%g);",
+                 //   timestamp,v);
         else
         {
             printf("Unknown value: %s\n",dcs_name);

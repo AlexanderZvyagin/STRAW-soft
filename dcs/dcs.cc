@@ -354,7 +354,7 @@ int main(int argc,const char *argv[])
             db_write_current                    (db,(s+"/ISEG_IMon.txt" ).c_str());
 
         if( NULL!=strchr(db_write,'G') )
-            db_write_hall_pressure_temperature  (db,(s+"/general.txt"   ).c_str());
+            db_write_hall_pressure_temperature  (db,(s+"/Hall.txt"   ).c_str());
     }
 
     //--------------------

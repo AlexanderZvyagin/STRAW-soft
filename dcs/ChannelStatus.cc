@@ -430,9 +430,10 @@ void ChannelStatus::ReadTemperature(void)
 
     // First we read the measurements.    
     vector<TSQLRow*> measurements;
-    TSQLResult *table = get_measurements(db,"dcs.Temperature",t1,t2,
-                                         "AND detector='ST05X1' AND sensor='TMJ'",
-                                         measurements);
+//    TSQLResult *table = get_measurements(db,"dcs.Temperature",t1,t2,
+//                                         "AND detector='ST05X1' AND sensor='TMJ'",
+//                                         measurements);
+    TSQLResult *table = get_measurements(db,"dcs.Hall_temperature",t1,t2,"",measurements);
 
     if( measurements.empty() )
     {
@@ -467,7 +468,7 @@ void ChannelStatus::ReadTemperature(void)
         decode_temperature_measurement(*it,thv.back().t,thv.back().v);
         
         thv.back().t = timestamp_to_time((char*)(*it)->GetField(0));
-        thv.back().v = atof((*it)->GetField(3));
+        thv.back().v = atof((*it)->GetField(1));
         
         if( thv.back().v<-10 || thv.back().v>50 )
             thv.pop_back(); // Bad temperature measurement, remove it!
@@ -575,7 +576,7 @@ void ChannelStatus::DrawInOneWindow(const std::string &options)
 
     if( options.find('T')!=std::string::npos )
         SetDrawTemperature(true);
-
+	
     if( NULL!=g_Temperature )
     {
         if( g_Temperature->GetN()==0 )
