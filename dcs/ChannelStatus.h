@@ -56,7 +56,7 @@ class ChannelStatus
              ReadCurrent(void). But it does, and that is why it does
              not have the 'const' keyword.
     */
-    void                DrawInOneWindow         (void);
+    void                DrawInOneWindow         (const std::string &opts="V");
 
     /*! \brief Draw histograms
 

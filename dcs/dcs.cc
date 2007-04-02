@@ -195,7 +195,7 @@ void dcs(int n,time_t t1,time_t t2)
     if( main_canvas->GetDrawTemperature() )
         options += 'T';
 
-    all_channels[gPad->GetTitle()]->DrawInOneWindow();
+    all_channels[gPad->GetTitle()]->DrawInOneWindow(options);
     //all_channels[gPad->GetTitle()]->Draw(options.c_str());
 }
 
@@ -354,7 +354,7 @@ int main(int argc,const char *argv[])
             db_write_current                    (db,(s+"/ISEG_IMon.txt" ).c_str());
 
         if( NULL!=strchr(db_write,'G') )
-            db_write_hall_pressure_temperature  (db,(s+"/general.txt"   ).c_str());
+            db_write_hall_pressure_temperature  (db,(s+"/Hall.txt"   ).c_str());
     }
 
     //--------------------
