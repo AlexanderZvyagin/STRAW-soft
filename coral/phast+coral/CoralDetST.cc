@@ -52,10 +52,15 @@ bool CoralDetST::IsDoubleLayer(const string &s) const
 
 float CoralDetST::DistRTCoral(float t) const
 {
+    CsRTRelation *rt = DetCoral()->getRTRelation();
+    if( rt==NULL )
+        return -1;
+
     bool error;
-    float r= DetCoral()->getRTRelation()->getRfromT(t-DetCoral()->getT0(),error);
+    float r = rt->getRfromT(t-DetCoral()->getT0(),error);
     if( error )
-        r=-1;
+        return -1;
+
     return r;
 }
 
