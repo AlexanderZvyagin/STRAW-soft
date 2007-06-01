@@ -16,7 +16,8 @@ def read_coral_options_file(f):
                 file_to_include = os.environ['CORAL']+'/'+res.group('f')
             else:
                 if file_to_include[0]!='/':
-                    file_to_include = start_dir+'/'+file_to_include
+                    raise 'Bad include path: "%s"' % file_to_include
+                    # file_to_include = start_dir+'/'+file_to_include
             options.extend(read_coral_options_file(file_to_include))
         else:
             options.append(line)
