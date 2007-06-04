@@ -495,7 +495,7 @@ void V::FillResidualPlot(const std::string &name, Residual *res_all,Residual *re
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void V::Residual::Fit(void)
+void V::Residual::Fit(const std::string &func)
 {
     if( h==NULL )
         throw "V::Residual::Fit() histogram does not exist.";
@@ -503,29 +503,44 @@ void V::Residual::Fit(void)
     delete fit_func;
     fit_func=NULL;
 
-    // To be used for the root function creation.
-    Double_t (*fptr)(const Double_t*, const Double_t*);
-    fptr=NULL;
-    
-    // Create a holder (TF1) of the fit results.
     char buf[222];
     sprintf(buf,"f_%s",h->GetName());
-    fit_func = new TF1(buf,fptr,0.,1.,10);
-    
-    // Parameter number.
-    int np=0;
 
-     //Resolution defined as RMS +-750micrometers
-     h->GetXaxis()->SetRangeUser(-0.075,0.075);
-     fit_func->SetParName(np,"RMS_750");   
-     fit_func->SetParameter(np,h->GetRMS(1));    
-     np++;     
-     fit_func->SetParName(np,"MEAN");   
-     fit_func->SetParameter(np,h->GetMean(1));    
-     np++;     
-     
-     // "No" more axis restriction
-     //h->GetXaxis()->SetRangeUser(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
+    if( func=="" )
+    {
+        // To be used for the root function creation.
+        Double_t (*fptr)(const Double_t*, const Double_t*);
+        fptr=NULL;
+
+        // Create a holder (TF1) of the fit results.
+        fit_func = new TF1(buf,fptr,0.,1.,10);
+
+        // Parameter number.
+        int np=0;
+
+         //Resolution defined as RMS +-750micrometers
+         h->GetXaxis()->SetRangeUser(-0.075,0.075);
+         fit_func->SetParName(np,"RMS_750");   
+         fit_func->SetParameter(np,h->GetRMS(1));    
+         np++;     
+         fit_func->SetParName(np,"MEAN");   
+         fit_func->SetParameter(np,h->GetMean(1));    
+         np++;     
+
+         // "No" more axis restriction
+         //h->GetXaxis()->SetRangeUser(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
+    }
+    else
+    if( func=="gaus" )
+    {
+        fit_func = new TF1(buf,"gaus",0,1);
+        fit_func -> SetParameters(10,0,0.02);
+        //fit_func -> FixParameter(1,0);
+        fit_func -> SetParLimits(1,-1e-4,1e-4);
+        h->Fit(fit_func,"Q");
+    }
+    else
+        throw "V::Residual::Fit(): Unknown function.";
 }
 
 ////////////////////////////////////////////////////////////////////////////////

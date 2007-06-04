@@ -86,7 +86,8 @@ void RT_fit(V::VFitResult &result)
         throw "RT_fit(): not a VS object!";
 
     v->CalculateRT2(result);
-    v_code->FillResidualPlots(result);
+    v_code->FillResidualPlots(result,0.15,100,0.15);
+    result.residuals_corr[0].Fit("gaus");
     v_code->MakeReport(result)->Write();
 
     // Print the results.

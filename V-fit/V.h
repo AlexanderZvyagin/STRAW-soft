@@ -88,7 +88,7 @@ class V
         
         /*! \brief Fit the residual plot.
         */
-        void Fit(void);
+        void Fit(const std::string &func="");
         
         const std::string   GetName(void) const;
         

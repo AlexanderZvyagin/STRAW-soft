@@ -86,12 +86,20 @@ void fcn_RT_calc(Int_t &np, Double_t *g, Double_t &fr, Double_t *x, Int_t flag)
 
         V::Residual r;
 
-        const float r_limit=1, r_max=0.5;
+        const float r_limit=1.5, r_max=1.5;
         me->FillResidualPlot("RT_fit", &r, NULL, NULL, _res_->vdata,rt,t0,w0,r_limit,100,r_max);
-        r.Fit();
+        
+        double residual = 0;
 
-        #warning "Resolution is taken from a first parameter of the residual fit."
-        const double residual = r.GetFitFunc()->GetParameter(0);
+        if( 1 )
+        {
+            residual = r.GetFitFunc()->GetParameter(0);
+        }
+        else
+        {
+            r.Fit("gaus");
+            residual = r.GetFitFunc()->GetParameter(2);
+        }
         
         // Try to maximize the number of fitted points.
         //  1 is added to avoid the possible '0' values.
@@ -940,8 +948,8 @@ void VS::CalculateRT2(V::VFitResult &result)
         minuit.mnexcm("SET NOWARNINGS", arglist ,0,ierflg);
 
     // -- Declare variables for the fit.
-    minuit.DefineParameter(0,"w0",result.w0_start,0.1,-0.1,0.1);
-    minuit.DefineParameter(1,"T0",result.t0_start,1,0,0);
+    minuit.DefineParameter(0,"w0",result.w0_start,0.001,-0.1,0.1);
+    minuit.DefineParameter(1,"T0",result.t0_start,0.1,0,0);
 
     const size_t n_points = rt->GetPointsT().size()-(result.dt!=0);
     for( size_t i=0; i<n_points; i++ )
