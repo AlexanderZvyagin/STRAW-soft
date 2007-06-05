@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "TMath.h"
 #include "TMinuit.h"
 #include "TTree.h"
 #include "TEventList.h"

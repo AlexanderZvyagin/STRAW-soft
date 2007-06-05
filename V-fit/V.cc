@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "TH2.h"
 #include "TF1.h"
 #include "TCanvas.h"
