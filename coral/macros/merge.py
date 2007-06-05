@@ -3,16 +3,9 @@ import ROOT
 #from ROOT import gROOT,TFile,TChain
 from optparse import OptionParser
 
-ROOT.gROOT.Reset()
+import CS.STRAW.names
 
-def straws():
-    for s in ['ST03X1','ST03X2','ST03Y1','ST03Y2','ST03V1','ST03U1',
-              'ST04X1','ST04Y1','ST04V1',
-              'ST05X1','ST05Y1','ST05U1',
-              'ST06X1','ST06Y1','ST06V1']:
-        for ud in ['u','d']:
-            for abc in ['a','b','c']:
-                yield s+ud+abc
+ROOT.gROOT.Reset()
 
 def get_files(d):
     files = []
@@ -38,7 +31,7 @@ root_file = ROOT.TFile.Open(args[1],'RECREATE','',9)
 
 chains = []
 
-for st in straws():
+for st in CS.STRAW.names.straw_full_names(2007):
     print 'Merging %s' % st
     root_file.cd()
     chains.append(ROOT.TChain('%s_CORAL' % st))
