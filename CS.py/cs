@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/python
 
 import sys,optparse,os
 import CS
@@ -18,7 +18,7 @@ def main():
 
     parser.description = BOLD+BLUE+'Run different COMPASS-soft related scripts. '+RESET
     parser.usage = '%prog <command> [arguments] \n' \
-                   '  Commands: '+BOLD+GREEN+','.join(commands)+RESET+'\n' \
+                   '  Commands: '+BOLD+GREEN+BLACKBG+','.join(commands)+RESET+'\n' \
                    '  Type "'+BOLD+'cs <command>'+RESET+'" for help.\n\n' \
                    'Author: Alexander.Zvyagin@cern.ch'
     
