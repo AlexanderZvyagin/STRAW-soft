@@ -127,8 +127,12 @@ void merge_split(const vector<string> &files,const string &dir_out)
     }
 }
 
-void get_files_list(vector<string> &files,const string &dir,const string &pattern)
+void get_files_list(vector<string> &files,const string &dirr,const string &pattern)
 {
+    string dir=dirr;
+    if( dir.substr(0,5)=="rfio:" )
+        dir = dir.substr(5,string::npos);
+
     char cmd[dir.length()+33];
     sprintf(cmd,"rfdir %s > rfdir.lst",dir.c_str());
     if( system(cmd) )
