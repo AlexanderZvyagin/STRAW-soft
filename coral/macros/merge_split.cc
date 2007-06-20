@@ -7,6 +7,7 @@
 #include <map>
 #include <exception>
 #include <fstream>
+#include <sstream>
 
 #include "TFile.h"
 #include "TNtuple.h"
@@ -84,9 +85,18 @@ void merge_split(const vector<string> &files,const string &dir_out)
     
     for( vector<string>::const_iterator f=files.begin(); f!=files.end() && !flag_end; f++ )
     {
-        printf("Working with file \"%s\"...\n",f->c_str());
+        if( f->size()==0 )
+            continue;
+    
+        string name=*f;
+        if( name.substr(0,6)=="/castor/" )
+            name="rfio:"+name;
+        if( name[name.size()-1]=='\n' )
+            name.resize(name.size()-1);
+
+        printf("Working with the file \"%s\"...\n",name.c_str());
         
-        auto_ptr<TFile> f_in(TFile::Open(f->c_str()));
+        auto_ptr<TFile> f_in(TFile::Open(name.c_str()));
         if( !f_in->IsOpen() )
             continue;
 
@@ -129,35 +139,31 @@ void merge_split(const vector<string> &files,const string &dir_out)
     }
 }
 
-void get_files_list(vector<string> &files,const string &dirr,const string &pattern)
+void get_files_list(vector<string> &files,const string &dir,const string &pattern)
 {
-    string dir=dirr;
-    if( dir.substr(0,5)=="rfio:" )
-        dir = dir.substr(5,string::npos);
+    char path[PATH_MAX];
+    snprintf(path,PATH_MAX,"rfdir %s",dir.c_str());
+    FILE *fp = popen(path, "r");
 
-    char cmd[dir.length()+33];
-    sprintf(cmd,"rfdir %s > rfdir.lst",dir.c_str());
-    if( system(cmd) )
-        throw "Failed to run rfdir!";
-    
-    ifstream f("rfdir.lst");
-    if( !f.is_open() )
-        throw "Can not read rfdir.lst file.";
-    
-    string s;
-    while( getline(f,s) )
+    if (fp == NULL)
+        throw "pope() failed!";
+
+    while( fgets(path,PATH_MAX,fp)!=NULL )
     {
-        char *ss = strrchr(s.c_str(),' ');
+        char *ss = strrchr(path,' ');
         if( ss==NULL )
             throw "get_files_list(): bad line";
         ss++;   // skip the space
         
         if( string_match(ss,pattern) )
         {
-            sprintf(cmd,"%s/%s",dir.c_str(),ss);
-            files.push_back(cmd);
+            sprintf(path,"%s/%s",dir.c_str(),ss);
+            files.push_back(path);
         }
     }
+    
+    if( -1==pclose(fp) )
+        throw "pclose() failed!";
 }
 
 int main(int argc,const char *argv[])
@@ -166,18 +172,13 @@ int main(int argc,const char *argv[])
 
     try
     {
-        char
-            *dir_in = "./",
-            *dir_out = "./",
+        const char
+            *dir_in = NULL,
+            *dir_out = NULL,
             *pattern= "^cdr.*\\.root";
 
         struct poptOption options[] =
         {
-            { "dir-in",     '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &dir_in, 0,
-                                          "Directory with input files. "
-                                          "Use rfio:/ prefix for CASTOR files.", "PATH" },
-            { "dir-out",    '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &dir_out,     0,
-                                          "Directory for output root files. Use rfio:/ prefix for CASTOR files.", "PATH" },
             { "pattern",    '\0', POPT_ARG_STRING|POPT_ARGFLAG_SHOW_DEFAULT,  &pattern,     0,
                                           "Pattern for input ROOT files.", "STRING" },
             POPT_AUTOHELP
@@ -185,8 +186,10 @@ int main(int argc,const char *argv[])
         };
         poptContext poptcont=poptGetContext(NULL,argc,argv,options,0);
         poptSetOtherOptionHelp(poptcont,
-            "<options...>\n"
-            "  Author: Alexander Zvyagin <Alexander.Zvyagin@cern.ch>\n"
+            "[options...] dir-in dir-out\n"
+            "  dir-in:  directory name with input files (cdr*.root)\n"
+            "  dir-out: directory name where output files will be written (ST0*.root)"
+//            "  Author:  Alexander Zvyagin <Zvyagin.Alexander@gmail.com>\n"
         );
         
         int rc;
@@ -198,11 +201,20 @@ int main(int argc,const char *argv[])
             throw "Bad argument!";
         }
 
+        dir_in  = poptGetArg(poptcont);
+        dir_out = poptGetArg(poptcont);
+        if( dir_in==NULL || dir_out==NULL || poptPeekArg(poptcont)!=NULL )
+        {
+            poptPrintHelp(poptcont,stdout,0);
+            return 1;
+        }
+
         // ==================
 
         vector<string> files;
 
         get_files_list(files,dir_in,pattern);
+        printf("%d files found.\n",files.size());
         
         for( const char *f; NULL!=(f=poptGetArg(poptcont)); )
             files.push_back(f);
