@@ -11,6 +11,8 @@
 #include "TFile.h"
 #include "TNtuple.h"
 
+#include "mysignal.h"
+
 using namespace std;
 
 bool string_match(const string &str, const string &pattern)
@@ -80,7 +82,7 @@ void merge_split(const vector<string> &files,const string &dir_out)
 {
     map<string, pair<TFile*,TNtuple*> > det_objs;
     
-    for( vector<string>::const_iterator f=files.begin(); f!=files.end(); f++ )
+    for( vector<string>::const_iterator f=files.begin(); f!=files.end() && !flag_end; f++ )
     {
         printf("Working with file \"%s\"...\n",f->c_str());
         
@@ -160,6 +162,8 @@ void get_files_list(vector<string> &files,const string &dirr,const string &patte
 
 int main(int argc,const char *argv[])
 {
+    set_signal_handler();
+
     try
     {
         char
