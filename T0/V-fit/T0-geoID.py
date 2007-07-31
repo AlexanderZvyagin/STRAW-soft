@@ -12,13 +12,18 @@ def t0_geoID(Vopt,st,geoID,chf,pos):
     if st[-1]=='b':
         RT = Vopt.RT6mm
         dt = 100
+        if st[4] in 'XUV' and (chf == 64 or chf == 127):
+            chg = 31
+        else :
+            chg = 32
     else:
         RT = Vopt.RT10mm
         dt = 130
-    command = '%s --det=%s --svel=28 --data=%s/%s.root --pos=%d,0 --chf=%d --chl=%d --chg=32 ' \
+        chg = 32
+    command = '%s --det=%s --svel=28 --data=%s/%s.root --pos=%d,0 --chf=%d --chl=%d --chg=%d ' \
               '--cuts="%s" --RT="%s" --comment="%s" %s ' \
               '--dt=%g --V-fit-max-points=%g --V-center-rm=%g --V-leg-dist=%g %s %s' \
-               % (Vopt.V,st,Vopt.data,st,pos,chf,chf,
+               % (Vopt.V,st,Vopt.data,st,pos,chf,chf,chg
                   mcuts,RT,str('geoID %s' % geoID),Vopt.t0_ref,dt,
                  Vopt.V_fit_max_points,Vopt.V_center_rm,Vopt.V_leg_dist,
                  Vopt.db,Vopt.session)
