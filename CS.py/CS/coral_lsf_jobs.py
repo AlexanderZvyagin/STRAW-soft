@@ -5,7 +5,7 @@ from CS.colors import *
 
 def main():
 
-    parser = optparse.OptionParser(version='1.0.5')
+    parser = optparse.OptionParser(version='1.0.6')
 
     parser.usage = '%prog <CORAL dir> <CORAL exe>  <CORAL opts> <output-dir> <run>\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -141,7 +141,8 @@ def main():
         extra = ''
         #extra = '--jobs-max=%d' % options.njobs
 
-    if os.system('cs lsf --queue=%s --coral=%s --output=%s %s cdr*.opt' % (queue,coral_exe,output,extra)):
+    if os.system('cs lsf --queue=%s --coral-setup=%s --coral=%s --output=%s %s cdr*.opt' %  \
+                    (queue,coral_dir,coral_exe,output,extra)):
         print RED,BOLD,'Failed to create the jobs list! Why?',RESET
         return 1
     
