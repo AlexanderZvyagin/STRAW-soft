@@ -34,11 +34,8 @@ class DstPeriod:
     def pprint(self):
         print '%s year=%d mode=%s slot=%d' % (self.name,self.year(),self.mode,self.slot)
 
-
-
 def add_period(period,d):
     d[period.name] = period
-
 
 def read_periods_from_page(page):
 
@@ -72,15 +69,8 @@ def read_periods_from_page(page):
     
     return periods
 
-if __name__=='__main__':
-    page = get_html_page('http://na58dst1.home.cern.ch/na58dst1/dstprod.html')
-    periods = read_periods_from_page(page)
-
-    for p in periods.values():
-        p.pprint()
-
 def main():
-    parser = optparse.OptionParser(version='1.0.0')
+    parser = optparse.OptionParser(version='1.0.1')
 
     parser.usage = '%prog <options>\n'\
                    'Author: Zvyagin.Alexander@cern.ch'
@@ -90,7 +80,12 @@ def main():
     parser.add_option('', '--test',action='store_true',dest='test',default=False,
                       help='Run the test suite')
     parser.add_option('', '--page',dest='page',default='http://na58dst1.home.cern.ch/na58dst1/dstprod.html',
-                      help='Run number', type='string')
+                      help='DST producation status page', type='string')
+    parser.add_option('', '--verbose',dest='verbose',default=False,action='store_true',
+                      help='Be verbose')
+    parser.add_option('', '--mdst-scan',dest='mdst',default=False,
+                      help='Print mDST files for selected years (default is all years; example: or "2002,2004")',
+                      type='string')
 
     (options, args) = parser.parse_args()
 
@@ -100,10 +95,27 @@ def main():
         work = True
         return unittest.main()
 
-    if 1:
+    years=[]
+    if not options.mdst:
+        for year in range(2002,2011):
+            years.append(year)
+    else:
+        for year in options.mdst.split(','):
+            years.append(int(year))
+
+    if options.verbose:
         work = True
-        page = get_html_page(options.page)
-        periods = read_periods_from_page(page)
+        print 'Years to scan:', years
+
+    if options.verbose:
+        print 'Reading page: ', options.page
+    page = get_html_page(options.page)
+
+    if options.verbose:
+        print 'Analysing it...'
+    periods = read_periods_from_page(page)
+
+    if options.verbose:
         for p in periods.values():
             p.pprint()
 
