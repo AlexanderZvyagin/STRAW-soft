@@ -87,11 +87,11 @@ def mdst_files(year,period,slot):
 
 def decode_mdst_name(name):
     import re
-    r = re.match('mDST-(?P<run>\d+)-(?P<slot>\d)-(?P<phast>\d+)\.root(\.(?P<num>\d+))?',name)
+    r = re.match('mDST-(?P<run>\d+)(-(?P<cdr>\d+))?-(?P<slot>\d)-(?P<phast>\d+)\.root(\.(?P<num>\d+))?',name)
     num = r.group('num')
     if num!=None:
         num = int(num)
-    return int(r.group('run')),int(r.group('slot')),int(r.group('phast')),num
+    return int(r.group('run')),r.group('cdr'),int(r.group('slot')),int(r.group('phast')),num
 
 def main():
     parser = optparse.OptionParser(version='1.1.2')
@@ -112,6 +112,10 @@ def main():
                       type='string')
     parser.add_option('', '--mode',dest='mode',default='LTH',
                       help='Select Longitudinal/Transversity/Hadron data, (use L,T,H,LTH,etc)', type='string')
+    parser.add_option('', '--mdst-chunks',dest='mdst_chunks',default=False,action='store_true',
+                      help='Print mDST files on chunks')
+    parser.add_option('', '--mdst-merged',dest='mdst_merged',default=False,action='store_true',
+                      help='Print mDST merged files')
 
     (options, args) = parser.parse_args()
 
@@ -168,29 +172,34 @@ def main():
             if not period.mode() in options.mode:
                 continue
 
-            d = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/mDST'
+            d_base = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/'
+            dd = []
+            if options.mdst_merged:    dd.append(d_base+'mDST')
+            if options.mdst_chunks:    dd.append(d_base+'mDST.chunks')
 
-            files=[]
-            for f in castor_files(d):
-                import os
-                name = os.path.split(f)[1]
-                try:
-                    run,slot,phast,n = decode_mdst_name(name)
-                except:
-                    print 'Bad name:',name
-                    continue
-                if slot!=period.slot():
-                    continue
-                files.append(f)
-            if options.verbose:
-                print BOLD,GREEN,'There are %d files in %s' % (len(files),d),RESET
+            for d in dd:
 
-            if 0==len(files):
-                print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
-                print 'Directory:',d
+                files=[]
+                for f in castor_files(d):
+                    import os
+                    name = os.path.split(f)[1]
+                    try:
+                        run,cdr,slot,phast,n = decode_mdst_name(name)
+                    except:
+                        print 'Bad name:',name
+                        continue
+                    if slot!=period.slot():
+                        continue
+                    files.append(f)
+                if options.verbose:
+                    print BOLD,GREEN,'There are %d files in %s' % (len(files),d),RESET
 
-            for f in files:
-                print f
+                if 0==len(files):
+                    print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
+                    print 'Directory:',d
+
+                for f in files:
+                    print f
 
     if not work:
         parser.print_help()
