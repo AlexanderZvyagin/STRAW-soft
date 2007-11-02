@@ -67,7 +67,7 @@ def read_periods_from_page(page):
         if r.group('period')[0]!='0':
             continue
         
-        rr = re.match('.*\s*(?P<mode>[LT]).*',r.group('mode'))
+        rr = re.match('.*\s*(?P<mode>[LTH]).*',r.group('mode'))
         if not rr:  continue
         mode = rr.group('mode')
         
@@ -94,10 +94,10 @@ def decode_mdst_name(name):
     return int(r.group('run')),int(r.group('slot')),int(r.group('phast')),num
 
 def main():
-    parser = optparse.OptionParser(version='1.1.0')
+    parser = optparse.OptionParser(version='1.1.2')
 
     parser.usage = '%prog <options>\n'\
-                   'Author: Zvyagin.Alexander@cern.ch'
+                   'Author: Zvyagin.Alexander@gmail.com'
 
     parser.description = 'Get DST producation information.'
 
@@ -107,11 +107,11 @@ def main():
                       help='DST producation status page (%default)', type='string')
     parser.add_option('', '--verbose',dest='verbose',default=False,action='store_true',
                       help='Be verbose')
-    parser.add_option('', '--time',dest='time',default=False,
-                      help='Print mDST files for selected years (default is all years; example: "2002,2004,03P1D")',
+    parser.add_option('', '--time',dest='time',default='',
+                      help='Print mDST files for selected years (example: "2002,2004,03P1D")',
                       type='string')
-    parser.add_option('', '--data-LT',dest='dataLT',default='LT',
-                      help='Select Longitudinal or Transversity data, (use "L","T" or "LT"', type='string')
+    parser.add_option('', '--mode',dest='mode',default='LTH',
+                      help='Select Longitudinal/Transversity/Hadron data, (use L,T,H,LTH,etc)', type='string')
 
     (options, args) = parser.parse_args()
 
@@ -123,15 +123,14 @@ def main():
 
     years=[]
     user_periods=[]
-    if not options.time:
-        for year in range(2002,2011):
-            years.append(year)
-    else:
-        for y in options.time.split(','):
-            try:
-                years.append(int(y))
-            except:
-                user_periods.append(y)
+    for y in options.time.split(','):
+        if not y:
+            continue
+        try:
+            years.append(int(y))
+        except:
+            user_periods.append(y)
+        work = True
 
     if options.verbose:
         work = True
@@ -153,7 +152,6 @@ def main():
             p.pprint()
 
     if 1:
-        work = True
         from CS.castor import castor_files
         compass_data = '/castor/cern.ch/compass/data/'
         
@@ -167,7 +165,7 @@ def main():
 
 
             # Check longitudinal or/and transversity data
-            if not period.mode() in options.dataLT:
+            if not period.mode() in options.mode:
                 continue
 
             d = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/mDST'
@@ -189,6 +187,7 @@ def main():
 
             if 0==len(files):
                 print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
+                print 'Directory:',d
 
             for f in files:
                 print f
