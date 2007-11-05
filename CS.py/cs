@@ -3,7 +3,10 @@
 import sys,optparse,os
 import CS
 from   CS import *
-from   CS.colors import *
+try:
+    from colors import *
+except:
+    from CS.colors import *
 
 def main():
 
