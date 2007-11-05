@@ -1,5 +1,8 @@
 import sys,re,optparse
-from colors import *
+try:
+    from colors import *
+except:
+    from CS.colors import *
 
 def get_html_page(page):
     import httplib
@@ -90,6 +93,31 @@ def decode_mDST_name(name):
         num = int(num)
     return int(r.group('run')),r.group('cdr'),int(r.group('slot')),int(r.group('phast')),num
 
+def get_period_files(period,dir_name='mDST',print_files=False):
+
+    from CS.castor import castor_files
+        
+    compass_data = '/castor/cern.ch/compass/data/'
+    d = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/'+dir_name
+
+    files=[]
+    for f in castor_files(d):
+        import os
+        name = os.path.split(f)[1]
+        try:
+            run,cdr,slot,phast,n = decode_mDST_name(name)
+        except:
+            print 'Bad name:',name
+            continue
+        if slot!=period.slot():
+            continue
+        files.append(f)
+
+        if print_files:
+            print f
+    
+    return files
+
 def main():
     parser = optparse.OptionParser(version='1.1.3')
 
@@ -154,9 +182,6 @@ def main():
             p.pprint()
 
     if 1:
-        from CS.castor import castor_files
-        compass_data = '/castor/cern.ch/compass/data/'
-        
         for period in periods.values():
 
             if (not period.year() in years) and (not period.full_name in user_periods):
@@ -170,30 +195,19 @@ def main():
             if not period.mode() in options.mode:
                 continue
 
-            d_base = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/'
             dd = []
-            if options.mDST_merged:    dd.append(d_base+'mDST')
-            if options.mDST_chunks:    dd.append(d_base+'mDST.chunks')
 
+            if options.mDST_merged:
+                dd.append('mDST')
+
+            if options.mDST_chunks:
+                dd.append('mDST.chunks')
+            
             for d in dd:
-
-                files=[]
-                for f in castor_files(d):
-                    import os
-                    name = os.path.split(f)[1]
-                    try:
-                        run,cdr,slot,phast,n = decode_mDST_name(name)
-                    except:
-                        print 'Bad name:',name
-                        continue
-                    if slot!=period.slot():
-                        continue
-                    files.append(f)
-
-                    print f
-
+                files = get_period_files(period,d,True)
+            
                 if options.verbose:
-                    print BOLD,GREEN,'There are %d files in %s' % (len(files),d),RESET
+                    print BOLD,GREEN,'There are %d files in %s for period %s' % (len(files),d,period.name()),RESET
 
                 if 0==len(files):
                     print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
