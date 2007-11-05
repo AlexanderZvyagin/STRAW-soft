@@ -53,13 +53,13 @@ class DstPeriod:
 def add_period(period,d):
     d[period.full_name] = period
 
+##  @brief @return regular expression for an html table cell
+def htc(name):
+    return '\s*\<td\>\s*(?P<%s>.*?)\s*\</td\>\s*' % name
+
 def read_periods_from_page(page):
 
     periods={}
-
-    ##  @brief @return regular expression for an html table cell
-    def htc(name):
-        return '\s*\<td\>\s*(?P<%s>.*?)\s*\</td\>\s*' % name
 
     for l in page.split('\n'):
         #r = re.match('\<tr\>\s*\<td\>\s*(?P<period>\d\d\w+)\s*\</td\>\<td\>',l)
