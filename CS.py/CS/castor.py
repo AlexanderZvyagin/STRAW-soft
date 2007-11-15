@@ -399,9 +399,9 @@ def main():
 
     import optparse
 
-    commands = ['ls','cp','mv','mDST']
+    commands = ['ls','cp','mv','rm','mDST']
 
-    parser = optparse.OptionParser(version='1.2.3')
+    parser = optparse.OptionParser(version='1.3.0')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
@@ -429,6 +429,17 @@ def main():
 
     if options.sep=='EndOfLine':
         options.sep = '\n'
+
+    if args[0]=='rm':
+        del args[0]
+        if len(args)==0:
+            print 'Usage: castor rm [options] <file> [<file> ....]'
+            return 1
+        files=[]
+        for d in args:
+            for f in castor_files(d,options.pattern):
+                os.system('rfrm %s' % f)
+        return 0
 
     if args[0]=='ls':
         del args[0]
