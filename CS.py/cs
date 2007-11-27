@@ -3,18 +3,21 @@
 import sys,optparse,os
 import CS
 from   CS import *
-from   CS.colors import *
+try:
+    from colors import *
+except:
+    from CS.colors import *
 
 def main():
 
-    commands = ['db','lsf','coral','castor','coral_lsf_jobs','phast_merge','coral_log']
+    commands = ['db','lsf','coral','castor','coral_lsf_jobs','phast_merge','coral_log','dst']
 
     if len(sys.argv)>1 and sys.argv[1] in commands:
         # Normal execution!
         del sys.argv[0]
         return getattr(CS,sys.argv[0]).main()
 
-    parser = optparse.OptionParser(version='1.0.2')
+    parser = optparse.OptionParser(version='1.0.3')
 
     parser.description = BOLD+BLUE+'Run different COMPASS-soft related scripts. '+RESET
     parser.usage = '%prog <command> [arguments] \n' \
