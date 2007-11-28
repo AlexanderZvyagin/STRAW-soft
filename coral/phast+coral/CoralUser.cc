@@ -123,7 +123,7 @@ void CoralUserInit() {
     if ((det_name[0] != 'S' || det_name[1] != 'T')
 	&& (det_name[0] != 'D' || det_name[1] != 'W')
 	&& (det_name[0] != 'D' || det_name[1] != 'C'))
-      // we're not interested in this detector.
+      // We're not interested in this detector.
       continue;
     string isto_name = "Udist_" + det_name;
     string isto_title = "Profile of " + det_name;
@@ -188,13 +188,13 @@ void CoralUserEvent() {
 	// We're not interested in this detector.
 	continue;
 
-      for ( unsigned int ii =0; ii < NumHelix; ii++ ) {
-	if (Zcl != v[ii].getZ()) {
+      for ( vector<CsHelix>::const_iterator iv = v.begin(); iv != v.end(); iv++ ) {
+	if (Zcl != iv->getZ()) {
 	  continue;
 	}
 
-	double X        = v[ii].getX();
-	double Y        = v[ii].getY();
+	double X        = iv->getX();
+	double Y        = iv->getY();
 	const HepMatrix& iR = dets.front()->getRotWRSInv();
 	double residual = (*il)->getU() - iR(1,1) * X - iR(1,2) * Y;
 	// Udist3[nameCl] is guaranteed to be != NULL
