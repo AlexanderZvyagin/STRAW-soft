@@ -178,14 +178,18 @@ void CoralUserEvent() {
           If not, proceed to next cluster.
        2. Find closest helix.
        3. Extrapolate helix to the cluster.
-       4. Calculate and record residual.  */
+       4. Calculate and record residual.
+
+       The implementation is somewhat simplified by the fact that
+       AFAICT both clusters and helices are arranged in order of
+       increasing Z.  */
 
     vector<CsHelix>::const_iterator ihu = helices.begin(), ihd = helices.begin();
 
     for ( list<CsCluster*>::const_iterator il = cl.begin();
 	  il != cl.end(); il++) {
       const list<CsDetector*> &dets = (*il)->getDetsList();
-      if ( dets.size() <= 0 ) { cout << "dets <= 0 !!!    How is this possible?" << endl; continue; }
+      if ( dets.size() != 1 ) { cout << "dets != 1 !!!    How is this possible?" << endl; continue; }
 
       double Zcl           = (*il)->getW();
       const string &nameCl = dets.front()->GetTBName();
@@ -193,8 +197,8 @@ void CoralUserEvent() {
 	// We're not interested in this detector.
 	continue;
 
-      // Advance helices such that they're the closest upstream and
-      // downstream of the cluster
+      // Advance helices such that they're the ones closest upstream
+      // and downstream of the cluster.
       while (ihd->getZ() < Zcl)	{
 	ihu = ihd;
 	ihd++;
@@ -205,22 +209,24 @@ void CoralUserEvent() {
 	}
       }
 
-      // the following is a bit ad hoc'ish.  Extrapolate the closest
+      // The following is a bit ad hoc'ish.  Extrapolate the closest
       // helix to the detector in question.  What is ad hoc'ish is the
       // determination of 1. when to do this and 2. which helix to
       // use.
       // IDEA: extrapolate both, then use least squares to determine 
       // approximation; weighted average -> (11.24) in James
       //
-      // Another idea would be to only use tracks whose extrapolation
-      // error is smaller than the error that we aim for.  This goal
-      // and the statistical implications of this choice need some
-      // investigation.
+      // Another idea that can be combined with the above,would be to
+      // only use tracks whose extrapolation error is smaller than the
+      // error that we aim for in the straws.  This goal (something
+      // around 100\mu{}m) and the statistical implications of this
+      // choice need some investigation.
 
-      // Extrapolate the helix that starts closer to the detector.
+      // Use the helix that starts closer to the detector.
       const CsHelix& h = (abs(Zcl - ihd->getZ()) < abs(Zcl - ihu->getZ())) ?
 	*ihd : *ihu;
-      // ... but not if we're too far away.
+      // ... but not if we're too far away.  This is entirely
+      // arbitrary and probably not needed.
       if( abs( Zcl - h.getZ()) > 1000) // millimeters
 	continue;
       CsHelix hextra;
@@ -235,7 +241,7 @@ void CoralUserEvent() {
       double Y        = hextra.getY();
       const HepMatrix& iR = dets.front()->getRotWRSInv();
       double residual = (*il)->getU() - iR(1,1) * X - iR(1,2) * Y;
-      // Udist3[nameCl] is guaranteed to be != NULL
+      // If we get here, Udist3[nameCl] != NULL.
       Udist3[nameCl]->Fill(iR(1,1)*X + iR(1,2)*Y, iR(2,1)*X + iR(2,2)*Y, residual);
       printf("fill: %s %g %g\n",nameCl.c_str(),(*il)->getU(), residual);
     }
