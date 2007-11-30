@@ -111,8 +111,8 @@ void CoralUserInit() {
 
   TFile *fs = gFile;
   fs->cd();
-  
-  dPrivate = new TDirectory("dPrivate","My Histos");
+
+  dPrivate = fs->mkdir("dPrivate","My Histos");
   dPrivate-> cd();
 
   list<CsDetector*> dtt= CsGeom::Instance()->getDetectors(); 
@@ -140,11 +140,7 @@ void CoralUserInit() {
 }
 
 void CoralUserEvent() {
-
-  const list<CsVertex*> &vrts = CsEvent::Instance()->getVertices();
-  const list<CsTrack* > &Trks = CsEvent::Instance()->getTracks();
   const vector<CsParticle* > &parts = CsEvent::Instance()->getParticles();
-  
 
   ///////////////// LOOP OVER PARTICLES //////////////// 
   
@@ -165,22 +161,31 @@ void CoralUserEvent() {
     }
 
     list<CsCluster*> cl = trk->getClusters();
-    vector<CsHelix> v = trk->getHelices();
+    vector<CsHelix> helices = trk->getHelices();
+
+    unsigned int NumHelix = helices.size();
+    if ( NumHelix < 2 ) { cout << "Helix Vector too small !!!    Size = " << NumHelix << endl; continue; }
+    if ( NumHelix >  ndet+2 ) { cout << "Helix Vector too large !!!    Size = " << NumHelix << endl; continue; }
 
     // less than 21 hits or last hit in front of SM1?
-    if ( cl.size() <= 20 || v.back().getZ() <= 4500 )
+    if ( cl.size() <= 20 || helices.back().getZ() <= 4500 )
       continue;
     
     // evaluate the residuals of a track vs cluster and fill into histograms
+
+    /* The procedure is the following:
+       1. for every cluster, see if it is on a detector of interest.
+          If not, proceed to next cluster.
+       2. Find closest helix.
+       3. Extrapolate helix to the cluster.
+       4. Calculate and record residual.  */
+
+    vector<CsHelix>::const_iterator ihu = helices.begin(), ihd = helices.begin();
 
     for ( list<CsCluster*>::const_iterator il = cl.begin();
 	  il != cl.end(); il++) {
       const list<CsDetector*> &dets = (*il)->getDetsList();
       if ( dets.size() <= 0 ) { cout << "dets <= 0 !!!    How is this possible?" << endl; continue; }
-
-      unsigned int NumHelix = v.size();
-      if ( NumHelix < 2 ) { cout << "Helix Vector too small !!!    Size = " << NumHelix << endl; continue; }
-      if ( NumHelix >  ndet+2 ) { cout << "Helix Vector too large !!!    Size = " << NumHelix << endl; continue; }
 
       double Zcl           = (*il)->getW();
       const string &nameCl = dets.front()->GetTBName();
@@ -188,22 +193,54 @@ void CoralUserEvent() {
 	// We're not interested in this detector.
 	continue;
 
-      for ( vector<CsHelix>::const_iterator iv = v.begin(); iv != v.end(); iv++ ) {
-	if (Zcl != iv->getZ()) {
+      // Advance helices such that they're the closest upstream and
+      // downstream of the cluster
+      while (ihd->getZ() < Zcl)	{
+	ihu = ihd;
+	ihd++;
+	if (ihd == helices.end()) {
+	  // This probably can't happen.
+	  cout << "No helix downstream of cluster\n";
+	  goto nextParticle;
+	}
+      }
+
+      // the following is a bit ad hoc'ish.  Extrapolate the closest
+      // helix to the detector in question.  What is ad hoc'ish is the
+      // determination of 1. when to do this and 2. which helix to
+      // use.
+      // IDEA: extrapolate both, then use least squares to determine 
+      // approximation; weighted average -> (11.24) in James
+      //
+      // Another idea would be to only use tracks whose extrapolation
+      // error is smaller than the error that we aim for.  This goal
+      // and the statistical implications of this choice need some
+      // investigation.
+
+      // Extrapolate the helix that starts closer to the detector.
+      const CsHelix& h = (abs(Zcl - ihd->getZ()) < abs(Zcl - ihu->getZ())) ?
+	*ihd : *ihu;
+      // ... but not if we're too far away.
+      if( abs( Zcl - h.getZ()) > 1000) // millimeters
+	continue;
+      CsHelix hextra;
+      if (!h.Extrapolate( Zcl, hextra ))
+	{
+	  cout << "Extrapolation failed.";
 	  continue;
 	}
 
-	double X        = iv->getX();
-	double Y        = iv->getY();
-	const HepMatrix& iR = dets.front()->getRotWRSInv();
-	double residual = (*il)->getU() - iR(1,1) * X - iR(1,2) * Y;
-	// Udist3[nameCl] is guaranteed to be != NULL
-	Udist3[nameCl]->Fill(iR(1,1)*X + iR(1,2)*Y, iR(2,1)*X + iR(2,2)*Y, residual);
-	//if( nameCl.substr(0,2)=="ST" )
-	printf("fill: %s %g\n",nameCl.c_str(),(*il)->getU());
-	break;
-      }
+      // Calculate residual and record it.
+      double X        = hextra.getX();
+      double Y        = hextra.getY();
+      const HepMatrix& iR = dets.front()->getRotWRSInv();
+      double residual = (*il)->getU() - iR(1,1) * X - iR(1,2) * Y;
+      // Udist3[nameCl] is guaranteed to be != NULL
+      Udist3[nameCl]->Fill(iR(1,1)*X + iR(1,2)*Y, iR(2,1)*X + iR(2,2)*Y, residual);
+      printf("fill: %s %g %g\n",nameCl.c_str(),(*il)->getU(), residual);
     }
+  nextParticle:
+    /* Nothing.  */ ;
   }
 }
 }
