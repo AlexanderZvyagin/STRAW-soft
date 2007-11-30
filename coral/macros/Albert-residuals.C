@@ -414,13 +414,13 @@ void CompStrawXray3D_forSasha() {
 
   char hist[100];
 
-  char *pos = { "0" };        // xray along spacer
+  char *pos = "0";        // xray along spacer
 
   TH1F *h0 = new TH1F[nDet];
   TH1F *h1 = new TH1F[nDet];
   TH1F *h0new = new TH1F[nDet];
   TH1F *h1new = new TH1F[nDet];
-  TProfile *hp1 = new TH1F[nDet];
+  TProfile *hp1 = new TProfile[nDet];
 
   gStyle->SetTitleH(0.1);
   gStyle->SetTitleW(0.7);
