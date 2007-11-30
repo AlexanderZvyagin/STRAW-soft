@@ -410,7 +410,7 @@ void UMaps_forSasha( TString name = "" ) {
 void CompStrawXray3D_forSasha() {
 
   UMaps_forSasha("withXray.root");
-  nDet = naDet.size();
+  int nDet = naDet.size();
 
   char hist[100];
 
@@ -455,7 +455,7 @@ void CompStrawXray3D_forSasha() {
 
     int t=f1->cd();
     //printf("cd=%d\n");
-    sprintf(hist, "du_Map_%s_%s", naDet[l], pos);
+    sprintf(hist, "du_Map_%s_%s", naDet[l].c_str(), pos);
     hp1[l] = (TProfile*)gDirectory->Get(hist);           // Histo from Data 2003 (all fitted)
     if( hp1[l]==NULL )
     {
@@ -467,13 +467,13 @@ void CompStrawXray3D_forSasha() {
     int   xMin  = hp1[l]->GetXaxis()->GetXmin();
     int   xMax  = hp1[l]->GetXaxis()->GetXmax();
 
-    sprintf(hist, "Udist_%s_xray", naDet[l]);
+    sprintf(hist, "Udist_%s_xray", naDet[l].c_str());
     h0new[l] = new TH1F(hist,hist,xBins,xMin,xMax);
-    sprintf(hist, "Udist_%s_tracking_2003", naDet[l]);
+    sprintf(hist, "Udist_%s_tracking_2003", naDet[l].c_str());
     h1new[l] = new TH1F(hist,hist,xBins,xMin,xMax);
 
     f0->cd();
-    sprintf(hist, "%s_xray_%s", naDet[l], pos);
+    sprintf(hist, "%s_xray_%s", naDet[l].c_str(), pos);
     h0[l] = (TH1F*)gDirectory->Get(hist);             // Histo from x-ray
 
     #ifdef report_C
