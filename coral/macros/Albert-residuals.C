@@ -409,7 +409,7 @@ void UMaps_forSasha( TString name = "" ) {
 
 void CompStrawXray3D_forSasha() {
 
-  UMaps_forSasha("richard_withXray.root");
+  UMaps_forSasha("withXray.root");
   nDet = naDet.size();
 
   char hist[100];
