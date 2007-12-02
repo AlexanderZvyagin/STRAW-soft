@@ -1,15 +1,23 @@
+#include "TROOT.h"
 #include "TStyle.h"
 #include "TPad.h"
 #include "TString.h"
 #include "TFile.h"
 #include "TCanvas.h"
 #include "TPostScript.h"
+#include "TKey.h"
 #include "TH3.h"
 #include "TH2.h"
+#include "TH1.h"
+#include "TF1.h"
+#include "TVirtualFitter.h"
 #include "TText.h"
 #include "TLatex.h"
-#include "string.h"
 #include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
 
 bool residual_xray_print=true;
 
@@ -132,7 +140,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     hd->SetStats(0);
     hd->Fit("pol1",fit_options);
     hd->GetFunction("pol1")->SetLineColor(hd->GetLineColor());
-    TVirtualFitter *fitter = TVirtualFitter::GetFitter();
+    fitter = TVirtualFitter::GetFitter();
     float cor_p0=fitter->GetParameter(0), cor_p1=fitter->GetParameter(1);
 
     //=====================
@@ -144,7 +152,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     h2->SetMaximum( 500);
     h2->Fit("pol1",fit_options);
     h2->GetFunction("pol1")->SetLineColor(h2->GetLineColor());
-    TVirtualFitter *fitter = TVirtualFitter::GetFitter();
+    fitter = TVirtualFitter::GetFitter();
     float orig_p0=fitter->GetParameter(0), orig_p1=fitter->GetParameter(1);
     printf("alignment of %s: %g %g\n",h1->GetName(),orig_p0,orig_p1);
 
@@ -162,7 +170,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
         det[8]=0;
 
         //c=new TCanvas(name,name,800,600);
-        TPad *pad=c->cd(2);
+        TPad *pad=(TPad *)c->cd(2);
         pad->Divide(1,3);
         
         // ---------        
@@ -330,7 +338,7 @@ void UMaps_forSasha( TString name = "" ) {
    TH3F *a0 = (TH3F*)gDirectory->Get(("Udist_" + naDet[i]).c_str());
    if( a0==NULL )
    {
-    printf("Can not find histogram %s\n",hist);
+    printf("Cannot find histogram %s\n",("Udist_" + naDet[i]).c_str());
     continue;
    }
    if (a0->GetEntries() < EntryLimit) continue;
@@ -364,7 +372,7 @@ void UMaps_forSasha( TString name = "" ) {
      prof[kk]->GetXaxis()->SetTitle("u in mm");
      prof[kk]->GetYaxis()->SetTitle("du in #mum");
      prof[kk]->GetYaxis()->SetTitleOffset(1.5);
-     prof[kk]->SetName(("du_Map_" + naDet[i] + pos[kk]).c_str());
+     prof[kk]->SetName(("du_Map_" + naDet[i] + "_" + pos[kk]).c_str());
      prof[kk]->SetTitle(("du of " + naDet[i] + pos[kk]).c_str());
      prof[kk]->Scale(1000);
      prof[kk]->SetMinimum(-500);
@@ -418,11 +426,10 @@ void CompStrawXray3D_forSasha() {
 
   char *pos = "0";        // xray along spacer
 
-  TH1F *h0[] = new TH1F*[nDet];
-  TH1F *h1[] = new TH1F*[nDet];
-  TH1F *h0new[] = new TH1F*[nDet];
-  TH1F *h1new[] = new TH1F*[nDet];
-  TProfile *hp1[] = new TProfile*[nDet];
+  TH1F **h0 = new TH1F*[nDet];
+  TH1F **h0new = new TH1F*[nDet];
+  TH1F **h1new = new TH1F*[nDet];
+  TProfile **hp1 = new TProfile*[nDet];
 
   gStyle->SetTitleH(0.1);
   gStyle->SetTitleW(0.7);
@@ -448,7 +455,6 @@ void CompStrawXray3D_forSasha() {
   sprintf(hist, "StrawXray-2007-Xray-%s.ps", pos);
   TPostScript *ps = new TPostScript(hist,112);
 
-  char *detector = "ST06X1";
   int pad = -1;
 
   for ( int l=0; l < nDet; l++) {
@@ -458,7 +464,7 @@ void CompStrawXray3D_forSasha() {
 
     int t=f1->cd();
     //printf("cd=%d\n");
-    sprintf(hist, "du_Map_%s%s", naDet[l].c_str(), pos);
+    sprintf(hist, "du_Map_%s_%s", naDet[l].c_str(), pos);
     hp1[l] = (TProfile*)gDirectory->Get(hist);           // Histo from Data 2003 (all fitted)
     if( hp1[l]==0 )
     {
@@ -466,9 +472,9 @@ void CompStrawXray3D_forSasha() {
         continue;
     }
 
-    int   xBins = hp1[l]->GetXaxis()->GetNbins();
-    int   xMin  = hp1[l]->GetXaxis()->GetXmin();
-    int   xMax  = hp1[l]->GetXaxis()->GetXmax();
+    int    xBins = hp1[l]->GetXaxis()->GetNbins();
+    double xMin  = hp1[l]->GetXaxis()->GetXmin();
+    double xMax  = hp1[l]->GetXaxis()->GetXmax();
 
     sprintf(hist, "Udist_%s_xray", naDet[l].c_str());
     h0new[l] = new TH1F(hist,hist,xBins,xMin,xMax);
@@ -543,7 +549,7 @@ void CompStrawXray3D_forSasha() {
     h0new[l]->Draw("Psame");
 
     char txt[100];
-    sprintf(txt,"%s", naDet[l]);
+    sprintf(txt,"%s", naDet[l].c_str());
     TLatex *tex3 = new TLatex(0.5, 0.93, txt);
     tex3->SetNDC(kTRUE);
     tex3->SetTextAlign(22);
@@ -666,7 +672,7 @@ void CompStrawXray3D_forSasha() {
       c->cd(6);
       h_rms_diff_rd->Draw();
       
-      TPad *p=c->cd(5);
+      TPad *p=(TPad *)c->cd(5);
       p->Divide(3,1);
       p->cd(1);
       h_rms_all_xray->SetStats(1);
@@ -737,7 +743,7 @@ void CompStrawXray3D_forSasha() {
 }
 
 
-Albert_residuals(char *detector="",char *options="")
+void Albert_residuals(char *detector="",char *options="")
 {
     CompStrawXray3D_forSasha();
     #ifdef report_C
