@@ -286,6 +286,7 @@ void UMaps_forSasha( TString name = "" ) {
  naDet.clear();
  TIter next(gDirectory->GetListOfKeys());
  TKey *key = 0;
+
  while ((key = (TKey*)next())) {
    // The interesting keys are those whose name starts with "Udist_",
    // followed by the detector name, since we are interested in
@@ -322,8 +323,9 @@ void UMaps_forSasha( TString name = "" ) {
 
    f->cd("dPrivate");
    const float EntryLimit = 10;
-   TString dd = naDet[i];
+   TString dd = naDet[i].c_str();
    cout << dd << endl;
+
    //sprintf(hist, "Udist_%s", naDet[i].c_str());
    TH3F *a0 = (TH3F*)gDirectory->Get(("Udist_" + naDet[i]).c_str());
    if( a0==NULL )
@@ -409,18 +411,18 @@ void UMaps_forSasha( TString name = "" ) {
 
 void CompStrawXray3D_forSasha() {
 
-  UMaps_forSasha("withXray.root");
+  UMaps_forSasha("result.root");
   int nDet = naDet.size();
 
   char hist[100];
 
   char *pos = "0";        // xray along spacer
 
-  TH1F *h0 = new TH1F[nDet];
-  TH1F *h1 = new TH1F[nDet];
-  TH1F *h0new = new TH1F[nDet];
-  TH1F *h1new = new TH1F[nDet];
-  TProfile *hp1 = new TProfile[nDet];
+  TH1F *h0[] = new TH1F*[nDet];
+  TH1F *h1[] = new TH1F*[nDet];
+  TH1F *h0new[] = new TH1F*[nDet];
+  TH1F *h1new[] = new TH1F*[nDet];
+  TProfile *hp1[] = new TProfile*[nDet];
 
   gStyle->SetTitleH(0.1);
   gStyle->SetTitleW(0.7);
@@ -443,21 +445,22 @@ void CompStrawXray3D_forSasha() {
   c1->SetFillColor(10);
   c1->SetBorderMode(0);
 
-  sprintf(hist, "StrawXray-2003-Xray-%s.ps", pos);
+  sprintf(hist, "StrawXray-2007-Xray-%s.ps", pos);
   TPostScript *ps = new TPostScript(hist,112);
 
   char *detector = "ST06X1";
   int pad = -1;
+
   for ( int l=0; l < nDet; l++) {
 
-    TString dd = naDet[l];
+    TString dd (naDet[l].c_str());
 //     if ( ! dd.Contains("ST06X1") ) continue;
 
     int t=f1->cd();
     //printf("cd=%d\n");
-    sprintf(hist, "du_Map_%s_%s", naDet[l].c_str(), pos);
+    sprintf(hist, "du_Map_%s%s", naDet[l].c_str(), pos);
     hp1[l] = (TProfile*)gDirectory->Get(hist);           // Histo from Data 2003 (all fitted)
-    if( hp1[l]==NULL )
+    if( hp1[l]==0 )
     {
         printf("The histograms was not found: %s\n",hist);
         continue;
@@ -487,11 +490,11 @@ void CompStrawXray3D_forSasha() {
     int   xxBins = h0[l]->GetXaxis()->GetNbins();
     cout << "Detector = " << naDet[l] << "    hist = " << hist << endl;
 
+    if ( xBins != xxBins ) {
+      cout << hist << ":   Number of xBins different !!" << endl;
+      continue;
+    }
     for ( int ii=1; ii <= xBins; ii++) {
-      if ( xBins != xxBins ) {
-        cout << hist << ":   Number of xBins different !!" << endl;
-        continue;
-      }
       h0new[l]->SetBinContent(ii, -h0[l]->GetBinContent(ii));
       h1new[l]->SetBinContent(ii, hp1[l]->GetBinContent(ii));
     }
@@ -561,7 +564,7 @@ void CompStrawXray3D_forSasha() {
       tex4->SetTextSize(0.05);
       tex4->SetTextColor(1);
       tex4->Draw();
-      sprintf(txt1, "Run #37059 x-ray corr.");
+      sprintf(txt1, "Run #XXXXX x-ray corr.");
 //printf("4c\n");
       TLatex *tex5 = new TLatex(0.15, 0.775, txt1);
       tex5->SetNDC(kTRUE);
