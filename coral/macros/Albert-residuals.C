@@ -176,7 +176,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
         det[8]=0;
 
         //c=new TCanvas(name,name,800,600);
-        TPad *pad=(TPad *)c->cd(2);
+        TVirtualPad *pad=c->cd(2);
         pad->Divide(1,3);
         
         // ---------        
@@ -503,7 +503,6 @@ void CompStrawXray3D_forSasha() {
     cout << "Detector = " << naDet[l] << endl;
 
     if (pad == -1 || pad == 6) {
-//printf("New page!\n");
       ps->NewPage();
       c1->Clear(); 
       c1->Divide(3,2);
@@ -512,18 +511,15 @@ void CompStrawXray3D_forSasha() {
 
     pad++;
     c1->cd(pad);
-//printf("1\n");
     float h0max = h0new[l]->GetMaximum();
     float h1max = h1new[l]->GetMaximum();
     if ( h1max > h0max ) h0max = h1max;
     float h0min = h0new[l]->GetMinimum();
     float h1min = h1new[l]->GetMinimum();
     if ( h1min < h0min ) h0min = h1min;
-//printf("2\n");
 
     h0new[l]->SetMaximum(500);
     h0new[l]->SetMinimum(-500);
-//printf("3\n");
     h0new[l]->GetXaxis()->SetTitleSize(0.05);
     h0new[l]->GetXaxis()->SetTitle("u in mm");
     h0new[l]->GetYaxis()->SetTitleOffset(1.2);
@@ -532,7 +528,6 @@ void CompStrawXray3D_forSasha() {
     h0new[l]->SetLineColor(1);
     h0new[l]->SetLineWidth(2);
     h0new[l]->Draw("P");
-    //    h0new[l]->Draw("hist");
 
     h1new[l]->SetLineColor(2);
     h1new[l]->SetLineWidth(1);
@@ -551,36 +546,27 @@ void CompStrawXray3D_forSasha() {
     tex3->SetTextColor(kBlue);
     tex3->Draw();
 
-//printf("4\n");
     if (pad == 1) {
-      const char* txt1 = "x-ray correction";
-//printf("4a\n");
-      TLatex *tex4 = new TLatex(0.15, 0.85, txt1);
-//printf("4b\n");
+      TLatex *tex4 = new TLatex(0.15, 0.85, "x-ray correction");
       tex4->SetNDC(kTRUE);
       tex4->SetTextAlign(12);
       tex4->SetTextSize(0.05);
       tex4->SetTextColor(1);
       tex4->Draw();
       const string txt2("Run #" + run_number + " x-ray corr.");
-//printf("4c\n");
       TLatex *tex5 = new TLatex(0.15, 0.775, txt2.c_str());
       tex5->SetNDC(kTRUE);
       tex5->SetTextAlign(12);
       tex5->SetTextSize(0.05);
       tex5->SetTextColor(2);
       tex5->Draw();
-//printf("4d\n");
     }
-//printf("4e\n");
     c1->Update();
-//printf("4f\n");
 
     ps->Off();
     plot_residuals_diff(h0new[l],h1new[l]);
     ps->On();
   }
-//printf("5\n");
 
 //   sprintf(hist, "StrawXray_%s_%s.eps", detector, pos);
 //   c1->Print(hist);
@@ -664,7 +650,7 @@ void CompStrawXray3D_forSasha() {
       c->cd(6);
       h_rms_diff_rd->Draw();
       
-      TPad *p=(TPad *)c->cd(5);
+      TVirtualPad *p=c->cd(5);
       p->Divide(3,1);
       p->cd(1);
       h_rms_all_xray->SetStats(1);
