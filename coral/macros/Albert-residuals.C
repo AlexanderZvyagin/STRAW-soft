@@ -269,8 +269,8 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     c->cd(0);
     if( residual_xray_print )
     {
-        c->Print("","gif");
-        c->Print("","ps");
+      c->Print((string(hd->GetName()) + ".gif").c_str());
+      c->Print((string(hd->GetName()) + ".ps").c_str());
     }
     delete c;
     gStyle->SetOptTitle(0);
