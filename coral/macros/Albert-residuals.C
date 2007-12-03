@@ -372,8 +372,8 @@ void UMaps_forSasha( TString name = "" ) {
      prof[kk]->GetXaxis()->SetTitle("u in mm");
      prof[kk]->GetYaxis()->SetTitle("du in #mum");
      prof[kk]->GetYaxis()->SetTitleOffset(1.5);
-     prof[kk]->SetName(("du_Map_" + naDet[i] + "_" + pos[kk]).c_str());
-     prof[kk]->SetTitle(("du of " + naDet[i] + pos[kk]).c_str());
+     prof[kk]->SetName((("du_Map_" + naDet[i]) + "_" + pos[kk]).c_str());
+     prof[kk]->SetTitle((("du of " + naDet[i]) + " at " + pos[kk]).c_str());
      prof[kk]->Scale(1000);
      prof[kk]->SetMinimum(-500);
      prof[kk]->SetMaximum( 500);
@@ -386,7 +386,7 @@ void UMaps_forSasha( TString name = "" ) {
        prof[kk]->Draw();
 
        TLatex *tex3 = new TLatex(0.5, 0.93,
-				 ("du Map of " + naDet[i] + pos[kk]).c_str());
+				 (("du Map of " + naDet[i]) + " at " + pos[kk]).c_str());
        tex3->SetNDC(kTRUE);
        tex3->SetTextAlign(22);
        tex3->SetTextSize(0.07);
