@@ -58,7 +58,7 @@ class CoralDet
         \return NULL if association has failed.
     */
     virtual const CsHelix *
-                        PropogateAndCheck       (const CsTrack &track_MRS, Track3D &trackMRS, Track3D &trackDRS);
+                        PropagateAndCheck       (const CsTrack &track_MRS, Track3D &trackMRS, Track3D &trackDRS);
 
     /*! Double hit analysis.
     */
