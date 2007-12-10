@@ -13,6 +13,7 @@ namespace CS {
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Return the helix with the smallest Z value in the track.
 
 const CsHelix& helix_first(const CsTrack &t)
 {
@@ -29,6 +30,7 @@ const CsHelix& helix_first(const CsTrack &t)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Return the helix with the biggest Z value in the track.
 
 const CsHelix& helix_last(const CsTrack &t)
 {
@@ -63,6 +65,7 @@ bool CoralDet::IsGoodTrack(const CsTrack &t) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Returns the helix in the track that is closest to the detector.
 
 const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
 {
@@ -113,8 +116,10 @@ const CsHelix *CoralDet::FindBestHelix(const CsTrack &track_MRS)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Extrapolates the track track_MRS to the detector, fills in trackMRS
+// and trackDRS.
 
-const CsHelix *CoralDet::PropogateAndCheck(const CsTrack &track_MRS, Track3D &trackMRS, Track3D &trackDRS)
+const CsHelix *CoralDet::PropagateAndCheck(const CsTrack &track_MRS, Track3D &trackMRS, Track3D &trackDRS)
 {
     // *****************************
     // Find the best helix
@@ -168,7 +173,7 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     // *****************************
 
     Track3D trackMRS, trackDRS;
-    const CsHelix *helix = PropogateAndCheck(track_MRS,trackMRS,trackDRS);
+    const CsHelix *helix = PropagateAndCheck(track_MRS,trackMRS,trackDRS);
     if( NULL==helix )
         return false;
 
@@ -208,7 +213,9 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
             continue;
 
         // At this point we know for sure that track crossed the channel (+/- misalignment)
-        
+
+	// If we haven't yet found a track or if we're closer than the
+	// previous tracks, fill in the values from this track.
         if( drift_det->GetObjCORAL().GetChan()<0 || fabs(drift_dist)<fabs(drift_det->GetObjCORAL().GetR()) )
         {
             fill=true;
@@ -238,35 +245,36 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
         // But do we have an intersection with the detector?
         set<DriftDetectorChannel*> hits;
         drift_det->MakeIntersection(trackMRS,hits);
-        if( !hits.empty() )
-            fill=true;           // We supposed to have a hit! (non-efficiency has been detected).
+        if( hits.empty() )
+	  return false;
+
+	// We should have had a hit if we get here, i.e. at this point
+	// we have detected a detector inefficiency.
     }
 
-    if( fill )
-    {
-        const TVector3
-            &hitMRS = trackMRS.GetPoint(),     // reference
-            &hitDRS = trackDRS.GetPoint();     // reference
+    const TVector3
+      &hitMRS = trackMRS.GetPoint(),     // reference
+      &hitDRS = trackDRS.GetPoint();     // reference
 
-        drift_det->GetObjCORAL().SetHitMRS(hitMRS);
-        drift_det->GetObjCORAL().SetHitDRS(hitDRS);
-        drift_det->GetObjCORAL().SetTrackAngle(trackDRS.GetDirection().X()/trackDRS.GetDirection().Z(),
-                                               trackDRS.GetDirection().Y()/trackDRS.GetDirection().Z());
-        drift_det->GetObjCORAL().SetTrackXi2(track_MRS.getChi2());
-        //st->GetObjCORAL().SetTrackResolution(cov(0,0));
-        drift_det->GetObjCORAL().SetTrackCharge(helix->getCop());
-        drift_det->GetObjCORAL().SetTrackX0(track_MRS.getXX0());
-        drift_det->GetObjCORAL().SetTrackHits(track_MRS.getClusters().size());
-        drift_det->GetObjCORAL().SetTrackTime(track_MRS.getMeanTime());
+    drift_det->GetObjCORAL().SetHitMRS(hitMRS);
+    drift_det->GetObjCORAL().SetHitDRS(hitDRS);
+    drift_det->GetObjCORAL().SetTrackAngle(trackDRS.GetDirection().X()/trackDRS.GetDirection().Z(),
+					   trackDRS.GetDirection().Y()/trackDRS.GetDirection().Z());
+    drift_det->GetObjCORAL().SetTrackXi2(track_MRS.getChi2());
+    //st->GetObjCORAL().SetTrackResolution(cov(0,0));
+    drift_det->GetObjCORAL().SetTrackCharge(helix->getCop());
+    drift_det->GetObjCORAL().SetTrackX0(track_MRS.getXX0());
+    drift_det->GetObjCORAL().SetTrackHits(track_MRS.getClusters().size());
+    drift_det->GetObjCORAL().SetTrackTime(track_MRS.getMeanTime());
 
-        drift_det->GetObjCORAL().SetTrackBegin( helix_first(track_MRS).getZ() );
-        drift_det->GetObjCORAL().SetTrackEnd  ( helix_last (track_MRS).getZ() );
-    }
+    drift_det->GetObjCORAL().SetTrackBegin( helix_first(track_MRS).getZ() );
+    drift_det->GetObjCORAL().SetTrackEnd  ( helix_last (track_MRS).getZ() );
 
-    return fill;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Try to make an association between the track and the detector.
 
 bool CoralDets::MakeAssociation(const CsTrack &t,CsDet &d,float misalignment)
 {

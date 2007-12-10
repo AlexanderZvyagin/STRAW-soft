@@ -8,6 +8,7 @@
 namespace CS {
 
 ////////////////////////////////////////////////////////////////////////////////
+// Returns true if this detector and the one named s form a double-layer.
 
 bool CoralDetST::IsDoubleLayer(const string &s) const
 {
