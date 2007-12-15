@@ -93,10 +93,12 @@ def coral_log_analyze(f):
     return status
 
 def main():
-    parser = optparse.OptionParser(version='1.0.1')
+    parser = optparse.OptionParser(version='1.0.2')
 
     parser.add_option('', '--noterm',dest='noterm',default=False,action='store_true',
                       help='Do not use fancy output (terminal properties).')
+    parser.add_option('', '--print-good-logs',dest='print_good_logs',default=False,action='store_true',
+                      help='Print good log file names.')
 
     parser.usage = 'cs %prog <options> [dir-with-logs]\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -135,8 +137,8 @@ def main():
     else:
         print 'There are %d CORAL log files to analyze.' % len(files)
 
-    ok  = 0
-    bad = 0
+    logs_ok  = []
+    logs_bad = []
 
     i=0
     n_files = 0.001+len(files)
@@ -154,18 +156,23 @@ def main():
         
         status = coral_log_analyze(f)
         if status.ok():
-            ok += 1
+            logs_ok.append(f)
         else:
-            bad += 1
-
+            logs_bad.append(f)
 
     if terminal:
         progress.update((i+1)/n_files, 'FINISHED')
     else:
         print
 
-    print 'Out of %d jobs %d(%d%%) finished successfully' % (ok+bad,ok,(ok*100)/(ok+bad+0.001))
+    if options.print_good_logs:
+        print 'List of good log files:'
+        for f in logs_ok:
+            print f
 
+    ok  = len(logs_ok)
+    bad = len(logs_bad)
+    print 'Out of %d jobs %d(%d%%) finished successfully' % (ok+bad,ok,(ok*100)/(ok+bad+0.001))
 
 if __name__=='__main__':
     sys.exit(main())

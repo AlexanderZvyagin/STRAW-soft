@@ -1,5 +1,8 @@
 import sys,re,optparse
-from colors import *
+try:
+    from colors import *
+except:
+    from CS.colors import *
 
 def get_html_page(page):
     import httplib
@@ -50,13 +53,13 @@ class DstPeriod:
 def add_period(period,d):
     d[period.full_name] = period
 
+##  @brief @return regular expression for an html table cell
+def htc(name):
+    return '\s*\<td\>\s*(?P<%s>.*?)\s*\</td\>\s*' % name
+
 def read_periods_from_page(page):
 
     periods={}
-
-    ##  @brief @return regular expression for an html table cell
-    def htc(name):
-        return '\s*\<td\>\s*(?P<%s>.*?)\s*\</td\>\s*' % name
 
     for l in page.split('\n'):
         #r = re.match('\<tr\>\s*\<td\>\s*(?P<period>\d\d\w+)\s*\</td\>\<td\>',l)
@@ -91,6 +94,8 @@ def decode_mDST_name(name):
     return int(r.group('run')),r.group('cdr'),int(r.group('slot')),int(r.group('phast')),num
 
 def get_period_files(period,dir_name='mDST',print_files=False):
+    from CS.castor import castor_files
+        
     compass_data = '/castor/cern.ch/compass/data/'
     d = compass_data+str(period.year())+'/oracle_dst/'+period.name()+'/'+dir_name
 
@@ -176,9 +181,6 @@ def main():
             p.pprint()
 
     if 1:
-        from CS.castor import castor_files
-        compass_data = '/castor/cern.ch/compass/data/'
-        
         for period in periods.values():
 
             if (not period.year() in years) and (not period.full_name in user_periods):
