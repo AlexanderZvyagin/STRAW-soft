@@ -1,28 +1,33 @@
+#include "TROOT.h"
 #include "TStyle.h"
 #include "TPad.h"
 #include "TString.h"
 #include "TFile.h"
 #include "TCanvas.h"
 #include "TPostScript.h"
+#include "TKey.h"
 #include "TH3.h"
 #include "TH2.h"
+#include "TH1.h"
+#include "TF1.h"
+#include "TVirtualFitter.h"
 #include "TText.h"
 #include "TLatex.h"
-#include "string.h"
+
 #include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
 
 bool residual_xray_print=true;
 
-const int Ndet = 90;
-char *naDet[Ndet] = { "ST03X1ua", "ST03X1uc", "ST03X1ub", "ST03X1db", "ST03X1da", "ST03X1dc", "ST03Y1ua", "ST03Y1uc", "ST03Y1ub", "ST03Y1db",
-                      "ST03Y1da", "ST03Y1dc", "ST03U1ua", "ST03U1uc", "ST03U1ub", "ST03U1db", "ST03U1da", "ST03U1dc", "ST03V1ua", "ST03V1uc",
-                      "ST03V1ub", "ST03V1db", "ST03V1da", "ST03V1dc", "ST03Y2ua", "ST03Y2uc", "ST03Y2ub", "ST03Y2db", "ST03Y2da", "ST03Y2dc",
-                      "ST03X2ua", "ST03X2uc", "ST03X2ub", "ST03X2db", "ST03X2da", "ST03X2dc", "ST04V1ua", "ST04V1uc", "ST04V1ub", "ST04V1db",
-                      "ST04V1da", "ST04V1dc", "ST04Y1ua", "ST04Y1uc", "ST04Y1ub", "ST04Y1db", "ST04Y1da", "ST04Y1dc", "ST04X1ua", "ST04X1uc",
-                      "ST04X1ub", "ST04X1db", "ST04X1da", "ST04X1dc", "ST05X1ua", "ST05X1uc", "ST05X1ub", "ST05X1db", "ST05X1da", "ST05X1dc",
-                      "ST05Y1ua", "ST05Y1uc", "ST05Y1ub", "ST05Y1db", "ST05Y1da", "ST05Y1dc", "ST05U1ua", "ST05U1uc", "ST05U1ub", "ST05U1db",
-                      "ST05U1da", "ST05U1dc", "ST06V1ua", "ST06V1uc", "ST06V1ub", "ST06V1db", "ST06V1da", "ST06V1dc", "ST06Y1ua", "ST06Y1uc",
-                      "ST06Y1ub", "ST06Y1db", "ST06Y1da", "ST06Y1dc", "ST06X1ua", "ST06X1uc", "ST06X1ub", "ST06X1db", "ST06X1da", "ST06X1dc" };
+const string year("2007");
+const string run_number("58926");
+const string input_file("result.root");
+
+vector <string> naDet; // Filled when reading input_file.
 
 const int NPlanes=24;
 TH1F *h_rms_diff          = new TH1F("rms_diff","rms",        NPlanes,0,NPlanes);
@@ -141,7 +146,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     hd->SetStats(0);
     hd->Fit("pol1",fit_options);
     hd->GetFunction("pol1")->SetLineColor(hd->GetLineColor());
-    TVirtualFitter *fitter = TVirtualFitter::GetFitter();
+    fitter = TVirtualFitter::GetFitter();
     float cor_p0=fitter->GetParameter(0), cor_p1=fitter->GetParameter(1);
 
     //=====================
@@ -153,7 +158,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     h2->SetMaximum( 500);
     h2->Fit("pol1",fit_options);
     h2->GetFunction("pol1")->SetLineColor(h2->GetLineColor());
-    TVirtualFitter *fitter = TVirtualFitter::GetFitter();
+    fitter = TVirtualFitter::GetFitter();
     float orig_p0=fitter->GetParameter(0), orig_p1=fitter->GetParameter(1);
     printf("alignment of %s: %g %g\n",h1->GetName(),orig_p0,orig_p1);
 
@@ -171,7 +176,7 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
         det[8]=0;
 
         //c=new TCanvas(name,name,800,600);
-        TPad *pad=c->cd(2);
+        TVirtualPad *pad=c->cd(2);
         pad->Divide(1,3);
         
         // ---------        
@@ -264,8 +269,8 @@ void plot_residuals_diff(TH1F *h1, TH1F *h2)
     c->cd(0);
     if( residual_xray_print )
     {
-        c->Print("","gif");
-        c->Print("","ps");
+      c->Print((string(hd->GetName()) + ".gif").c_str());
+      c->Print((string(hd->GetName()) + ".ps").c_str());
     }
     delete c;
     gStyle->SetOptTitle(0);
@@ -290,21 +295,41 @@ void UMaps_forSasha( TString name = "" ) {
  if( f==0) f = TFile::Open(name);
  f->cd("dPrivate");
 
+ /* Determine the set of detectors for which there are histograms in
+    the file.  */
+ naDet.clear();
+ TIter next(gDirectory->GetListOfKeys());
+ TKey *key = 0;
+
+ while ((key = (TKey*)next())) {
+   // The interesting keys are those whose name starts with "Udist_",
+   // followed by the detector name, since we are interested in
+   // straws, we only care about detectors whose names begin in "ST".
+   if (strncmp(key->GetName(), "Udist_ST", strlen("Udist_ST"))) {
+     // Only straws.
+     continue;
+   }
+   string s(key->GetName());
+   naDet.push_back(s.substr(strlen("Udist_"))); // Store detector name.
+ }
+ sort( naDet.begin(), naDet.end() );
+ int Ndet = naDet.size();
+
  TCanvas *c1;
  c1 = new TCanvas("c1","c1",10,10,700,1000);
  c1->SetFillColor(10);
 
  TFile *out = new TFile("Umap-STxray.root","RECREATE");         // output file with Umaps, to be read from CompStrawXray3D.C
 
- TPostScript *ps = new TPostScript("Umap-31971-STxray.ps",111);
+ TPostScript *ps = new TPostScript(("Umap-" + run_number + "-STxray.ps").c_str(),111);
 
  /////////////////////////////////////
 
- int pad = -1;
+ int pad = 0;
  gPad->Update();
  for ( int i=0; i < Ndet; i++) {
 
-   if (pad == -1 || pad == 6) {
+   if ((pad % 6) == 0) {
      ps->NewPage();
      c1->Clear(); 
      c1->Divide(2,3);
@@ -313,16 +338,14 @@ void UMaps_forSasha( TString name = "" ) {
 
    f->cd("dPrivate");
    const float EntryLimit = 10;
-   char hist[100];
-   char hist1[100];
-   char hist2[100];
-   TString dd = naDet[i];
+   TString dd = naDet[i].c_str();
    cout << dd << endl;
-   sprintf(hist, "Udist_%s", naDet[i]);
-   TH3F *a0 = (TH3F*)gDirectory->Get(hist);
+
+   //sprintf(hist, "Udist_%s", naDet[i].c_str());
+   TH3F *a0 = (TH3F*)gDirectory->Get(("Udist_" + naDet[i]).c_str());
    if( a0==NULL )
    {
-    printf("Can not find histogram %s\n",hist);
+    printf("Cannot find histogram %s\n",("Udist_" + naDet[i]).c_str());
     continue;
    }
    if (a0->GetEntries() < EntryLimit) continue;
@@ -346,19 +369,18 @@ void UMaps_forSasha( TString name = "" ) {
      h0[kk]->GetXaxis()->SetTitle("u in mm");
      h0[kk]->GetYaxis()->SetTitle("v in mm");
      h0[kk]->GetZaxis()->SetTitle("du in mm");
-     sprintf(hist1, "%s Residual u vs v at %s", naDet[i], pos[kk]);
-     h0[kk]->SetTitle(hist1);
-     sprintf(hist1, "uv_Residual_%s_%s", naDet[i], pos[kk]);
-     h0[kk]->SetName(hist1);
+     // Cint doesn't like it if I do the "+" thing as in the line
+     // below, therefore this ugly piece of crap.
+     h0[kk]->SetTitle((string(naDet[i]).append(" Residual u vs v at ")
+		       .append(pos[kk])).c_str());
+     h0[kk]->SetName(("uv_Residual_" + naDet[i] + pos[kk]).c_str());
 
      prof[kk] = h0[kk]->ProfileX();
      prof[kk]->GetXaxis()->SetTitle("u in mm");
      prof[kk]->GetYaxis()->SetTitle("du in #mum");
      prof[kk]->GetYaxis()->SetTitleOffset(1.5);
-     sprintf(hist1, "du_Map_%s_%s", naDet[i], pos[kk]);
-     prof[kk]->SetName(hist1);
-     sprintf(hist2, "du of %s at %s", naDet[i], pos[kk]);
-     prof[kk]->SetTitle(hist2);
+     prof[kk]->SetName((("du_Map_" + naDet[i]) + "_" + pos[kk]).c_str());
+     prof[kk]->SetTitle((("du of " + naDet[i]) + " at " + pos[kk]).c_str());
      prof[kk]->Scale(1000);
      prof[kk]->SetMinimum(-500);
      prof[kk]->SetMaximum( 500);
@@ -370,9 +392,8 @@ void UMaps_forSasha( TString name = "" ) {
 
        prof[kk]->Draw();
 
-       char txt[100];
-       sprintf(txt,"du Map of %s at %s", naDet[i], pos[kk]);
-       TLatex *tex3 = new TLatex(0.5, 0.93, txt);
+       TLatex *tex3 = new TLatex(0.5, 0.93,
+				 (("du Map of " + naDet[i]) + " at " + pos[kk]).c_str());
        tex3->SetNDC(kTRUE);
        tex3->SetTextAlign(22);
        tex3->SetTextSize(0.07);
@@ -391,45 +412,20 @@ void UMaps_forSasha( TString name = "" ) {
  ps->Close();
  out->Close();
 }
-#include "TStyle.h"
-#include "TPad.h"
-#include "TString.h"
-#include "TFile.h"
-#include "TCanvas.h"
-#include "TPostScript.h"
-#include "TH3.h"
-#include "TH2.h"
-#include "TText.h"
-#include "TLatex.h"
-#include "TString.h"
 
 void CompStrawXray3D_forSasha() {
 
-  static const int numDet = 90;
-  char *naDet[numDet] = { "ST03X1ua", "ST03X1ub", "ST03X1uc", "ST03X1da", "ST03X1db", "ST03X1dc",
-                          "ST03Y1ua", "ST03Y1ub", "ST03Y1uc", "ST03Y1da", "ST03Y1db", "ST03Y1dc",
-                          "ST03U1ua", "ST03U1ub", "ST03U1uc", "ST03U1da", "ST03U1db", "ST03U1dc",
-                          "ST03V1ua", "ST03V1ub", "ST03V1uc", "ST03V1da", "ST03V1db", "ST03V1dc",
-                          "ST03X2ua", "ST03X2ub", "ST03X2uc", "ST03X2da", "ST03X2db", "ST03X2dc",
-                          "ST03Y2ua", "ST03Y2ub", "ST03Y2uc", "ST03Y2da", "ST03Y2db", "ST03Y2dc",
-                          "ST04X1ua", "ST04X1ub", "ST04X1uc", "ST04X1da", "ST04X1db", "ST04X1dc",
-                          "ST04Y1ua", "ST04Y1ub", "ST04Y1uc", "ST04Y1da", "ST04Y1db", "ST04Y1dc",
-                          "ST04V1ua", "ST04V1ub", "ST04V1uc", "ST04V1da", "ST04V1db", "ST04V1dc",
-                          "ST05X1ua", "ST05X1ub", "ST05X1uc", "ST05X1da", "ST05X1db", "ST05X1dc",
-                          "ST05Y1ua", "ST05Y1ub", "ST05Y1uc", "ST05Y1da", "ST05Y1db", "ST05Y1dc",
-                          "ST05U1ua", "ST05U1ub", "ST05U1uc", "ST05U1da", "ST05U1db", "ST05U1dc",
-                          "ST06X1ua", "ST06X1ub", "ST06X1uc", "ST06X1da", "ST06X1db", "ST06X1dc",
-                          "ST06Y1ua", "ST06Y1ub", "ST06Y1uc", "ST06Y1da", "ST06Y1db", "ST06Y1dc",
-                          "ST06V1ua", "ST06V1ub", "ST06V1uc", "ST06V1da", "ST06V1db", "ST06V1dc" };
+  UMaps_forSasha(input_file);
+  int nDet = naDet.size();
+
   char hist[100];
 
-  char *pos = { "0" };        // xray along spacer
+  char *pos = "0";        // xray along spacer
 
-  TH1F *h0[numDet];
-  TH1F *h1[numDet];
-  TH1F *h0new[numDet];
-  TH1F *h1new[numDet];
-  TProfile *hp1[numDet];
+  TH1F **h0 = new TH1F*[nDet];
+  TH1F **h0new = new TH1F*[nDet];
+  TH1F **h1new = new TH1F*[nDet];
+  TProfile **hp1 = new TProfile*[nDet];
 
   gStyle->SetTitleH(0.1);
   gStyle->SetTitleW(0.7);
@@ -452,37 +448,36 @@ void CompStrawXray3D_forSasha() {
   c1->SetFillColor(10);
   c1->SetBorderMode(0);
 
-  sprintf(hist, "StrawXray-2003-Xray-%s.ps", pos);
-  TPostScript *ps = new TPostScript(hist,112);
+  TPostScript *ps = new TPostScript(("StrawXray-" + year + "-Xray-" + pos).c_str(),112);
 
-  char *detector = "ST06X1";
   int pad = -1;
-  for ( int l=0; l < numDet; l++) {
 
-    TString dd = naDet[l];
+  for ( int l=0; l < nDet; l++) {
+
+    TString dd (naDet[l].c_str());
 //     if ( ! dd.Contains("ST06X1") ) continue;
 
     int t=f1->cd();
     //printf("cd=%d\n");
-    sprintf(hist, "du_Map_%s_%s", naDet[l], pos);
+    sprintf(hist, "du_Map_%s_%s", naDet[l].c_str(), pos);
     hp1[l] = (TProfile*)gDirectory->Get(hist);           // Histo from Data 2003 (all fitted)
-    if( hp1[l]==NULL )
+    if( hp1[l]==0 )
     {
         printf("The histograms was not found: %s\n",hist);
         continue;
     }
 
-    int   xBins = hp1[l]->GetXaxis()->GetNbins();
-    int   xMin  = hp1[l]->GetXaxis()->GetXmin();
-    int   xMax  = hp1[l]->GetXaxis()->GetXmax();
+    int    xBins = hp1[l]->GetXaxis()->GetNbins();
+    double xMin  = hp1[l]->GetXaxis()->GetXmin();
+    double xMax  = hp1[l]->GetXaxis()->GetXmax();
 
-    sprintf(hist, "Udist_%s_xray", naDet[l]);
-    h0new[l] = new TH1F(hist,hist,xBins,xMin,xMax);
-    sprintf(hist, "Udist_%s_tracking_2003", naDet[l]);
-    h1new[l] = new TH1F(hist,hist,xBins,xMin,xMax);
+    string nm("Udist_" + naDet[l] + "_xray");
+    h0new[l] = new TH1F(nm.c_str(),nm.c_str(),xBins,xMin,xMax);
+    nm = string("Udist_" + naDet[l] + "_tracking_" + year);
+    h1new[l] = new TH1F(nm.c_str(),nm.c_str(),xBins,xMin,xMax);
 
     f0->cd();
-    sprintf(hist, "%s_xray_%s", naDet[l], pos);
+    sprintf(hist, "%s_xray_%s", naDet[l].c_str(), pos);
     h0[l] = (TH1F*)gDirectory->Get(hist);             // Histo from x-ray
 
     #ifdef report_C
@@ -496,11 +491,11 @@ void CompStrawXray3D_forSasha() {
     int   xxBins = h0[l]->GetXaxis()->GetNbins();
     cout << "Detector = " << naDet[l] << "    hist = " << hist << endl;
 
+    if ( xBins != xxBins ) {
+      cout << hist << ":   Number of xBins different !!" << endl;
+      continue;
+    }
     for ( int ii=1; ii <= xBins; ii++) {
-      if ( xBins != xxBins ) {
-        cout << hist << ":   Number of xBins different !!" << endl;
-        continue;
-      }
       h0new[l]->SetBinContent(ii, -h0[l]->GetBinContent(ii));
       h1new[l]->SetBinContent(ii, hp1[l]->GetBinContent(ii));
     }
@@ -508,7 +503,6 @@ void CompStrawXray3D_forSasha() {
     cout << "Detector = " << naDet[l] << endl;
 
     if (pad == -1 || pad == 6) {
-//printf("New page!\n");
       ps->NewPage();
       c1->Clear(); 
       c1->Divide(3,2);
@@ -517,18 +511,15 @@ void CompStrawXray3D_forSasha() {
 
     pad++;
     c1->cd(pad);
-//printf("1\n");
     float h0max = h0new[l]->GetMaximum();
     float h1max = h1new[l]->GetMaximum();
     if ( h1max > h0max ) h0max = h1max;
     float h0min = h0new[l]->GetMinimum();
     float h1min = h1new[l]->GetMinimum();
     if ( h1min < h0min ) h0min = h1min;
-//printf("2\n");
 
     h0new[l]->SetMaximum(500);
     h0new[l]->SetMinimum(-500);
-//printf("3\n");
     h0new[l]->GetXaxis()->SetTitleSize(0.05);
     h0new[l]->GetXaxis()->SetTitle("u in mm");
     h0new[l]->GetYaxis()->SetTitleOffset(1.2);
@@ -537,7 +528,6 @@ void CompStrawXray3D_forSasha() {
     h0new[l]->SetLineColor(1);
     h0new[l]->SetLineWidth(2);
     h0new[l]->Draw("P");
-    //    h0new[l]->Draw("hist");
 
     h1new[l]->SetLineColor(2);
     h1new[l]->SetLineWidth(1);
@@ -548,9 +538,7 @@ void CompStrawXray3D_forSasha() {
     h0new[l]->SetMarkerStyle(20);
     h0new[l]->Draw("Psame");
 
-    char txt[100];
-    sprintf(txt,"%s", naDet[l]);
-    TLatex *tex3 = new TLatex(0.5, 0.93, txt);
+    TLatex *tex3 = new TLatex(0.5, 0.93, naDet[l].c_str());
     tex3->SetNDC(kTRUE);
     tex3->SetTextAlign(22);
     tex3->SetTextSize(0.065);
@@ -558,37 +546,27 @@ void CompStrawXray3D_forSasha() {
     tex3->SetTextColor(kBlue);
     tex3->Draw();
 
-//printf("4\n");
     if (pad == 1) {
-      char txt1[100];
-      sprintf(txt1, "x-ray correction");
-//printf("4a\n");
-      TLatex *tex4 = new TLatex(0.15, 0.85, txt1);
-//printf("4b\n");
+      TLatex *tex4 = new TLatex(0.15, 0.85, "x-ray correction");
       tex4->SetNDC(kTRUE);
       tex4->SetTextAlign(12);
       tex4->SetTextSize(0.05);
       tex4->SetTextColor(1);
       tex4->Draw();
-      sprintf(txt1, "Run #37059 x-ray corr.");
-//printf("4c\n");
-      TLatex *tex5 = new TLatex(0.15, 0.775, txt1);
+      const string txt2("Run #" + run_number + " x-ray corr.");
+      TLatex *tex5 = new TLatex(0.15, 0.775, txt2.c_str());
       tex5->SetNDC(kTRUE);
       tex5->SetTextAlign(12);
       tex5->SetTextSize(0.05);
       tex5->SetTextColor(2);
       tex5->Draw();
-//printf("4d\n");
     }
-//printf("4e\n");
     c1->Update();
-//printf("4f\n");
 
     ps->Off();
     plot_residuals_diff(h0new[l],h1new[l]);
     ps->On();
   }
-//printf("5\n");
 
 //   sprintf(hist, "StrawXray_%s_%s.eps", detector, pos);
 //   c1->Print(hist);
@@ -672,7 +650,7 @@ void CompStrawXray3D_forSasha() {
       c->cd(6);
       h_rms_diff_rd->Draw();
       
-      TPad *p=c->cd(5);
+      TVirtualPad *p=c->cd(5);
       p->Divide(3,1);
       p->cd(1);
       h_rms_all_xray->SetStats(1);
@@ -743,7 +721,7 @@ void CompStrawXray3D_forSasha() {
 }
 
 
-Albert_residuals(char *detector="",char *options="")
+void Albert_residuals(char *detector="",char *options="")
 {
     CompStrawXray3D_forSasha();
     #ifdef report_C

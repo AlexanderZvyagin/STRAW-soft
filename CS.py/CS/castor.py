@@ -11,7 +11,7 @@ def path_stat(path):
         
     return stat
 
-def copy(src,dst,move=False):
+def copy(src,dst,move=False,pattern=None):
     print src,'==>>',dst
     if path_stat(src)['Protection'][0]=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
@@ -29,11 +29,11 @@ def copy(src,dst,move=False):
                 print 'Failed to create the directory \"%s\"' % dst
                 return res
 
-        for f in castor_files(src):
+        for f in castor_files(src,pattern):
             name = os.path.split(f)[1]
             if name in ['.','..']:
                 continue
-            res = copy(f,dst+'/'+name,move)
+            res = copy(f,dst+'/'+name,move,pattern)
             if res:
                 return res
 
@@ -399,9 +399,9 @@ def main():
 
     import optparse
 
-    commands = ['ls','cp','mv','mDST']
+    commands = ['ls','cp','mv','rm','mDST']
 
-    parser = optparse.OptionParser(version='1.2.2')
+    parser = optparse.OptionParser(version='1.3.0')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
@@ -430,6 +430,17 @@ def main():
     if options.sep=='EndOfLine':
         options.sep = '\n'
 
+    if args[0]=='rm':
+        del args[0]
+        if len(args)==0:
+            print 'Usage: castor rm [options] <file> [<file> ....]'
+            return 1
+        files=[]
+        for d in args:
+            for f in castor_files(d,options.pattern):
+                os.system('rfrm %s' % f)
+        return 0
+
     if args[0]=='ls':
         del args[0]
         if len(args)==0:
@@ -446,10 +457,10 @@ def main():
         move = args[0]=='mv'
         del args[0]
         if len(args)!=2:
-            print 'Usage: castor cp <src> <dst>'
-            print 'Usage: castor mv <src> <dst>'
+            print 'Usage: castor cp [options] <src> <dst>'
+            print 'Usage: castor mv [options] <src> <dst>'
             return 1
-        copy(args[0],args[1],move)
+        copy(args[0],args[1],move,options.pattern)
         return 0
 
     if args[0]=='mDST':
