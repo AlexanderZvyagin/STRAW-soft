@@ -1,5 +1,5 @@
 from __future__ import generators
-import string,re,os,sys,time
+import string,re,os,os.path,sys,time
 
 def path_stat(path):
     stat={}
