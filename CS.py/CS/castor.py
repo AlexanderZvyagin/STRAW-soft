@@ -190,26 +190,52 @@ def cdr_files_2007(printout=0):
             f['period']=period
             yield f
 
+# Generator of CDR files in 2007 castor directory
+def cdr_files_year(year,printout=0):
+    dirs='/castor/cern.ch/compass/data/%d/raw/' % year
+    lst=[]
+    for i in range(0,55):
+        lst.append('T%2.2d'%i)
+        lst.append('W%2.2d'%i)
+    lst.append('test')
+
+    # This allows to add new files first.
+    lst.reverse()
+
+    for period in lst:
+        d = dirs+period
+        if printout>0:
+            print 'Scanning directory',d
+        for f in rfdir_cdr_files(d,printout):
+            f['year']=year
+            f['period']=period
+            yield f
+
 # Generator of CDR files from castor
 def cdr_files(years=[],printout=0):
     if not years:
         # Set default value
         years=(2002,2003,2004,2006,2007,2008,2009,2010)
-    if 2002 in years:
-        for f in cdr_files_2002():
-            yield f
-    if 2003 in years:
-        for f in cdr_files_2003():
-            yield f
-    if 2004 in years:
-        for f in cdr_files_2004():
-            yield f
-    if 2006 in years:
-        for f in cdr_files_2006():
-            yield f
-    if 2007 in years:
-        for f in cdr_files_2007():
-            yield f
+    
+    for y in years:
+        if y==2002:
+            for f in cdr_files_2002():
+                yield f
+        elif y==2003:
+            for f in cdr_files_2003():
+                yield f
+        elif y==2004:
+            for f in cdr_files_2004():
+                yield f
+        elif y==2006:
+            for f in cdr_files_2006():
+                yield f
+        elif y==2007:
+            for f in cdr_files_2007():
+                yield f
+        else:
+            for f in cdr_files_year(y):
+                yield f
 
 class mDST:
     def __init__(self,name):
