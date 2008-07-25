@@ -6,5 +6,5 @@ setup(name='CS',
       author_email='Alexander.Zvyagin@cern.ch',
       version='1.0.0',
       packages=['CS','CS.STRAW'],
-      scripts=['cs']
+      scripts=['CS/STRAW/anal.py']
       )

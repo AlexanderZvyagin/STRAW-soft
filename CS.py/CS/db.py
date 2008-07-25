@@ -17,7 +17,8 @@ class DataBaseMySQL:
         return self.cursor
 
 ## Print run information from a COMPASS DB machine
-def run_info_db(run,dbhost='lxfs1657.cern.ch'):
+#def run_info_db(run,dbhost='lxfs1657.cern.ch'):
+def run_info_db(run,dbhost='wwwcompass.cern.ch'):
     table='runlb.tb_run'
     db = DataBaseMySQL(dbhost)
     data={}

@@ -1,5 +1,6 @@
 import ROOT
 import os
+from array import array
 
 def read_table(table,detector):
     ##Returns a dictionary made of information taken from the given table for the given detector in the format {channel}{position}{value}
@@ -16,14 +17,17 @@ def read_table(table,detector):
 #        print 'Cannot acces table'
         raise 'Cannot access the table!'
 
-#    command = "mysql -s -B -hna58pc052 -e 'select detector,chf,chl,pos,T0,data from STDC.%s'" % (table)
-#    command = "mysql -s -B -hna58pc052 -e 'select detector,chf,chl,pos,T0,W,data from STDC.%s == %s'" % (table)
-#    command = "mysql -s -B -hna58pc052 -e 'select chf,chl,pos,T0,W,data from STDC.%s where detector='%s''" % (table,detector)
-#    command = "mysql -s -B -hna58pc052 -e 'select chf,chl,pos,T0,W,data from STDC.%s where detector='%s''" % (table,detector)
-    command = "mysql -s -B -hna58pc052 -uanonymous -e 'select chf,chl,pos,T0,W,resCORAL_RMS_750,data from STDC." + table + ' where detector="' + detector + '"' + "'"
+    #command = "mysql -s -B -hna58pc052 -uanonymous -e 'select chf,chl,pos,T0,W,resCORAL_RMS_750,data from STDC." + table + ' where detector="' + detector + '"' + "'"
+    command = "mysql -s -B -hna58pc052 -uanonymous -e 'select chf,chl,pos,T0,W,resCORAL_RMS_750,data,comment from STDC." + table + ' where detector="' + detector + '"' + "'"
     for f in os.popen(command):
 #        det,chf,chl,pos,t0,w,res,data = f.strip().split()
-        chf,chl,pos,t0,w,res,data = f.strip().split()
+        #chf,chl,pos,t0,w,res,data = f.strip().split()
+        try :#per card case
+            chf,chl,pos,t0,w,res,data,c1,geoID = f.strip().split()
+            geoID = int(geoID)
+        except ValueError :#perchannel case
+            chf,chl,pos,t0,w,res,data = f.strip().split()
+            geoID = 0
         chf  = int(chf)
         chl  = int(chl)
         pos  = int(pos)
@@ -31,11 +35,12 @@ def read_table(table,detector):
         w    = float(w)
         res  = float(res)*10000#To have in micrometer units
         data = int(data)
+        #geoID = int(geoID)
         
 #        if not data:
 #            continue
 
-        #DB contains entries for channal > 191 although they do not exists here we exclude them
+        #DB contains entries for channel > 191 although they do not exists here we exclude them
         if detector[4]=='Y' and chf>191:
             continue
         try:
@@ -51,42 +56,48 @@ def read_table(table,detector):
         ch_dic[chf][pos]['W0'] = w 
         ch_dic[chf][pos]['RES'] = res 
         ch_dic[chf][pos]['DATA'] = data 
+        ch_dic[chf][pos]['geoID'] = geoID 
+        ch_dic[chf][pos]['chl'] = chl 
         
     if len(ch_dic) == 0:
-        raise 'Could not create dictionnary for %s on table %s'%(detector,table)
+        print 'Could not create dictionnary for %s on table %s'%(detector,table)
+        return False
     return ch_dic
 
 
 
-#This function takes a dictionnary (created by the function read_table)
-#and return of a hist. value (T0 or W0) vs channel for a given position
-def plot_ValuevsCH(D_V_ch,Values = 'T0',pos = 21):
-    h_vs_ch = ROOT.TH1F("h_vs_ch",Values + " vs Channel, " + "pos= " + str(pos),len(D_V_ch),0,len(D_V_ch))
-    for i in D_V_ch.items():
+def plot_ValuevsCH(D_V_ch,Values = 'T0',pos = 21,label = 'NoLabel'):
+    ##This function takes a dictionnary (created by the function read_table)
+    ##and return of a hist. value (T0 or W0) vs channel for a given position
+    #We first make a list of the axis point to make an array in the hist. creation so that it can accetpt non regular axis
+    if D_V_ch == False:
+        print 'Returning false because dic could not be created!'
+        return False
+    AxisPoints = D_V_ch.keys()
+    AxisPoints.sort()
+    AxisPoints.append(D_V_ch[AxisPoints[-1]][0]['chl'])#Add chf as the last point of the axis array 
+    #print AxisPoints
+    h_vs_ch = ROOT.TH1F("h_vs_ch_%s_%s_%s"%(Values,pos,label),Values + " vs Channel, " + "pos= " + str(pos),len(AxisPoints)-1,array('f',AxisPoints))
+    #h_vs_ch = ROOT.TH1F("h_vs_ch_%s_%s_%s"%(Values,pos,label),Values + " vs Channel, " + "pos= " + str(pos),len(D_V_ch),0,len(D_V_ch))
+    for i in D_V_ch.items():#Would be clearer with : for chf in D_V.keys(): ... Fill(chf,D_V[chf][pos][Values])
+#        print i
+#        print 'i[0] :'
+#        print i[0]
+#        print 'i[1][pos][Values] :'
+#        print i[1][pos][Values]
         try:
             h_vs_ch.Fill(i[0],i[1][pos][Values])
         except:
-            print 'skipping channel' + str(i[1])
+            print 'skipping channel' + str(i[1]) + ' and filling 0'
             h_vs_ch.Fill(i[0],0)
                
     return h_vs_ch   
 
 
-def w0vsCH(table = 'ST03_4',detector = 'ST03X1ub',pos = 21):
-    my_dict = read_table(table,detector)
-    h = plot_ValuevsCH(my_dict,'W0',pos)
-    h.Draw()
-
-
-def t0vsCH(table,detector,pos):
-    my_dict = read_table(table,detector)
-    h = plot_ValuevsCH(my_dict,'T0',pos)
-    h.Draw()
-
 
 #This function returns a distribution histogram of "Value"
 #note: value = 0 are excluded
-def dist_Value(D_V,value,pos):
+def dist_Value(D_V,value,pos,label = 'NoLabel'):
 
     if value == 'W0':
         rng = 0.05
@@ -97,7 +108,7 @@ def dist_Value(D_V,value,pos):
     #get the average for histogram range
     avg = av_value(D_V,value,pos)
 #    h_d = ROOT.TH1F("h_d",value + " distribution, " + "pos= " + str(pos),50,avg-10,avg+10)#CHANGE THIS to dynamical input
-    h_d = ROOT.TH1F("h_d",value + " distribution, " + "pos= " + str(pos),50,avg-rng,avg+rng)#CHANGE THIS to dynamical input
+    h_d = ROOT.TH1F("h_d_%s_%s_%s"%(value,pos,label),value + " distribution, " + "pos= " + str(pos),50,avg-rng,avg+rng)#CHANGE THIS to dynamical input
     
     for i in D_V.items():
         #We remove value that are exactly 0
@@ -179,4 +190,6 @@ def diff_pos_dist(d,value,pos1, pos2):
     h_d.SetYTitle("Entries")
         
     return h_d
+
+
 
