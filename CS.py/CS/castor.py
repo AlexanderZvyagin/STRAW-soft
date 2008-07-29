@@ -1,5 +1,5 @@
 from __future__ import generators
-import string,re,os,sys,time
+import string,re,os,os.path,sys,time
 
 def path_stat(path):
     stat={}
@@ -11,7 +11,7 @@ def path_stat(path):
         
     return stat
 
-def copy(src,dst,move=False):
+def copy(src,dst,move=False,pattern=None):
     print src,'==>>',dst
     if path_stat(src)['Protection'][0]=='-':
         res = os.system('rfcp %s %s' % (src,dst) )
@@ -29,11 +29,11 @@ def copy(src,dst,move=False):
                 print 'Failed to create the directory \"%s\"' % dst
                 return res
 
-        for f in castor_files(src):
+        for f in castor_files(src,pattern):
             name = os.path.split(f)[1]
             if name in ['.','..']:
                 continue
-            res = copy(f,dst+'/'+name,move)
+            res = copy(f,dst+'/'+name,move,pattern)
             if res:
                 return res
 
@@ -190,26 +190,52 @@ def cdr_files_2007(printout=0):
             f['period']=period
             yield f
 
+# Generator of CDR files in 2007 castor directory
+def cdr_files_year(year,printout=0):
+    dirs='/castor/cern.ch/compass/data/%d/raw/' % year
+    lst=[]
+    for i in range(0,55):
+        lst.append('T%2.2d'%i)
+        lst.append('W%2.2d'%i)
+    lst.append('test')
+
+    # This allows to add new files first.
+    lst.reverse()
+
+    for period in lst:
+        d = dirs+period
+        if printout>0:
+            print 'Scanning directory',d
+        for f in rfdir_cdr_files(d,printout):
+            f['year']=year
+            f['period']=period
+            yield f
+
 # Generator of CDR files from castor
 def cdr_files(years=[],printout=0):
     if not years:
         # Set default value
         years=(2002,2003,2004,2006,2007,2008,2009,2010)
-    if 2002 in years:
-        for f in cdr_files_2002():
-            yield f
-    if 2003 in years:
-        for f in cdr_files_2003():
-            yield f
-    if 2004 in years:
-        for f in cdr_files_2004():
-            yield f
-    if 2006 in years:
-        for f in cdr_files_2006():
-            yield f
-    if 2007 in years:
-        for f in cdr_files_2007():
-            yield f
+    
+    for y in years:
+        if y==2002:
+            for f in cdr_files_2002():
+                yield f
+        elif y==2003:
+            for f in cdr_files_2003():
+                yield f
+        elif y==2004:
+            for f in cdr_files_2004():
+                yield f
+        elif y==2006:
+            for f in cdr_files_2006():
+                yield f
+        elif y==2007:
+            for f in cdr_files_2007():
+                yield f
+        else:
+            for f in cdr_files_year(y):
+                yield f
 
 class mDST:
     def __init__(self,name):
@@ -399,9 +425,9 @@ def main():
 
     import optparse
 
-    commands = ['ls','cp','mv','mDST']
+    commands = ['ls','cp','mv','rm','mDST']
 
-    parser = optparse.OptionParser(version='1.2.2')
+    parser = optparse.OptionParser(version='1.3.0')
     parser.description = 'CASTOR file system utilities'
     parser.usage = 'cs %prog <command> [options]\n' \
                    '  Type "%prog <command>" for more help.\n' \
@@ -430,6 +456,17 @@ def main():
     if options.sep=='EndOfLine':
         options.sep = '\n'
 
+    if args[0]=='rm':
+        del args[0]
+        if len(args)==0:
+            print 'Usage: castor rm [options] <file> [<file> ....]'
+            return 1
+        files=[]
+        for d in args:
+            for f in castor_files(d,options.pattern):
+                os.system('rfrm %s' % f)
+        return 0
+
     if args[0]=='ls':
         del args[0]
         if len(args)==0:
@@ -446,10 +483,10 @@ def main():
         move = args[0]=='mv'
         del args[0]
         if len(args)!=2:
-            print 'Usage: castor cp <src> <dst>'
-            print 'Usage: castor mv <src> <dst>'
+            print 'Usage: castor cp [options] <src> <dst>'
+            print 'Usage: castor mv [options] <src> <dst>'
             return 1
-        copy(args[0],args[1],move)
+        copy(args[0],args[1],move,options.pattern)
         return 0
 
     if args[0]=='mDST':

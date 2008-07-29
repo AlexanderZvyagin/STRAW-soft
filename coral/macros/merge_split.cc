@@ -216,9 +216,6 @@ int main(int argc,const char *argv[])
         get_files_list(files,dir_in,pattern);
         printf("%d files found.\n",files.size());
         
-        for( const char *f; NULL!=(f=poptGetArg(poptcont)); )
-            files.push_back(f);
-
         merge_split(files,dir_out);
     
         return 0;

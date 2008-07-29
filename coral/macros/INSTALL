@@ -1,0 +1,27 @@
+1. Make sure that you have 'cmake' package.
+
+$ export PATH=/afs/cern.ch/compass/detector/straw/bin:$PATH
+
+2. Go to some directotry where you will build the files:
+
+$ cd STRAW-soft.git/coral/macros
+
+3. Create a directory where you will 'build' the project:
+
+$ mkdir cbuild
+
+4. Configure it:
+
+$ cd cbuild
+$ cmake ..
+$ make
+
+5. Install it:
+
+  -- Choose  a location:
+  $ ccmake ..
+  
+  And change CMAKE_INSTALL_PREFIX
+  
+  -- Install it:
+  $ make install

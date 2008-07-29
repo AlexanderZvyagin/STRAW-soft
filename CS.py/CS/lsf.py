@@ -1,7 +1,7 @@
 import re,os,sys,optparse
 
 def main():
-    parser = optparse.OptionParser(version='1.0.2')
+    parser = optparse.OptionParser(version='1.0.5')
     parser.description = 'Prepare LSF jobs to start.'
     parser.usage = 'cs %prog [options] <coral1.opt> [<coral2.opt> ...]\n'\
                    'Author: Alexander.Zvyagin@cern.ch'
@@ -12,6 +12,8 @@ def main():
                       help='List of extra options to be passed to the LSF', type='string',metavar='OPTIONS')
     parser.add_option('', '--name',dest='name',
                       help='Job name', type='string',metavar='NAME')
+    parser.add_option('', '--coral-setup',dest='coral_setup',
+                      help='Path to a CORAL top directory with the "setup".', type='string',metavar='PATH')
     parser.add_option('', '--coral',dest='coral',
                       help='Path to a CORAL executable.', type='string',metavar='PATH')
     parser.add_option('', '--output',dest='output',
@@ -44,6 +46,12 @@ def main():
     options.coral  = os.path.abspath(options.coral)
     options.output = os.path.abspath(options.output)
 
+    if options.coral_setup:
+        coral_setup = '%s/setup.sh' % options.coral_setup
+        if not os.access(coral_setup,os.R_OK):
+            print 'The file %s does not exist!' % coral_setup
+        del coral_setup
+
     for o in args:
         opt = os.path.abspath(o)
         options.jobs_max -= 1
@@ -61,6 +69,9 @@ def main():
         script_sh = os.path.abspath(name)+'.sh'
         script = file(script_sh,'w')
         os.system('chmod +x %s' % script_sh)
+        script.write('#!/bin/sh\n')
+        if options.coral_setup:
+            script.write('cd %s && . setup.sh\n' % options.coral_setup)
         coral_run = '%s %s > /tmp/%s.log 2>&1' % (options.coral,opt,name)
         script.write(coral_run + '\n\n')
 
