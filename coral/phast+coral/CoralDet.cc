@@ -265,7 +265,10 @@ bool CoralDet::MakeAssociation(const CsTrack &track_MRS,float misalignment2)
     drift_det->GetObjCORAL().SetTrackCharge(helix->getCop());
     drift_det->GetObjCORAL().SetTrackX0(track_MRS.getXX0());
     drift_det->GetObjCORAL().SetTrackHits(track_MRS.getClusters().size());
-    drift_det->GetObjCORAL().SetTrackTime(track_MRS.getMeanTime());
+
+    //drift_det->GetObjCORAL().SetTrackTime(track_MRS.getMeanTime());
+    drift_det->GetObjCORAL().SetTrackTime(-1350.0);
+    if(track_MRS.hasMeanTime())  drift_det->GetObjCORAL().SetTrackTime(track_MRS.getMeanTime());//Set time only if track has time
 
     drift_det->GetObjCORAL().SetTrackBegin( helix_first(track_MRS).getZ() );
     drift_det->GetObjCORAL().SetTrackEnd  ( helix_last (track_MRS).getZ() );
