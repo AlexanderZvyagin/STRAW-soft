@@ -17,7 +17,7 @@
 #
 # USR_PACK=1  -  to be able to call PHAST user functions 
 #
-# PHAST=1     -  create "pcol.exe" - normal PHAST executable
+# CORAL_IN_USERFUNC=1   -  create "pcol.exe" - normal PHAST executable
 # but linked against CORAL libraries, so that user may use
 # CORAL classes and functions in his ./user/User* code
 #
@@ -27,7 +27,7 @@
 # Default: if not specified, current "official" "PROD" version date is assumed.
 # (See CORAL_DATE definition below)
 #
-#
+#	   Sergei.Gerassimov@cern.ch
 #
 # some definitions
 THIS=$(shell pwd)/////
@@ -42,7 +42,7 @@ PREPROC = "-D PHAST_HOME="\"$(PHASTDIR)\"
 # Put real date here if there is a problem of compatiblility with older CORAL versions
 #(hopefuly it will be automatized some time :-)
 ifndef CORAL_DATE
-  CORAL_DATE=20060824
+  CORAL_DATE=20070522
 endif
 PREPROC += "-D CORAL_DATE = "$(CORAL_DATE)   
 
@@ -51,12 +51,16 @@ ALL_O	= $(ALL_C:.cc=.o)
 EXE  = coral.exe
 PCOL = pcol.exe
 
-ifndef PHAST
-  default:	$(EXE)
-else
+ifdef CORAL_IN_USERFUNC
   USR_PACK=1
   PREPROC += "-D CORAL_IN_USERFUNC"
   default:	$(PCOL)          
+else
+  default:	$(EXE)
+endif
+
+ifeq ($(shell ls SLC4_64 2>/dev/null), SLC4_64)
+  SLC4_64 = 1
 endif
 
 
@@ -86,8 +90,16 @@ MAKEMLIB = make -s -C $(SRCDIR) lib
 ifndef NO_FORTRAN
   ifdef NO_RFIO # remove -lshift
     export CERNLIB =`cernlib graflib grafX11 kernlib mathlib | sed -e 's/-lshift//'`
+    ifdef SLC4_64
+      export CERNLIB = -L/afs/cern.ch/sw/lcg/external/cernlib/2005/slc4_amd64_gcc34/lib/ \
+	-L/usr/local/lib -lnsl -lcrypt -ldl -lkernlib -lpacklib -lmathlib
+    endif
   else
     export CERNLIB =`cernlib graflib grafX11 kernlib mathlib`
+    ifdef SLC4_64
+      export CERNLIB = -L/afs/cern.ch/sw/lcg/external/cernlib/2005/slc4_amd64_gcc34/lib/ \
+	-L/usr/local/lib -lshift -lnsl -lcrypt -ldl -lkernlib -lpacklib -lmathlib
+    endif
   endif
 else
   PREPROC += "-DNO_FORTRAN"
@@ -112,16 +124,29 @@ ifdef USR_PACK
   MORE_LIBS_LINK = $(MLIB)
 endif
 
+# flags to be used in external Makefiles
 export INCLUDE += $(C_INCLUDES) -I$(LIBDIR) -I$(USRDIR) -I$(SRCDIR) 
-export FLAGS = -g -Wall $(PREPROC) 
+export FLAGS = -g -Wall -fPIC $(PREPROC) 
+export F77FLAGS = -g -Wall -fPIC
 export LD = $(CXX) -shared
 export DLSUF = so
 
+#az
 Detectors = /afs/cern.ch/compass/detector/straw/Detectors/SLC4
 export INCLUDE += -I$(Detectors)/include
 LIBS           += $(Detectors)/lib/libDetectors.so -Xlinker -rpath -Xlinker /afs/cern.ch/compass/detector/straw/Detectors/SLC4/lib
+#az
 
-LOCAL_FLAGS =  -Wno-overloaded-virtual -D PHASTinCORAL -DDEBUG 
+#Fortran compilation flAGS
+export F77FLAGS= -g -Wall -fPIC
+
+LOCAL_FLAGS =  -Wno-overloaded-virtual -fPIC -D PHASTinCORAL -DDEBUG 
+
+ifndef SLC4_64
+  export FLAGS    += -m32 
+  export F77FLAGS += -m32
+  LOCAL_FLAGS     += -m32 
+endif
 
 # make exe
 $(EXE):	$(ALL_O) $(PLIB) $(MORE_LIBS) Depend.mk 
@@ -163,14 +188,14 @@ $(MLIB):	$(SRCDIR)/*.h $(SRCDIR)/*.cc
 	@$(MAKEMLIB)
 
 show:	
-	@echo $(C_FLAGS)
-#	@echo $(FLAGS)
-#	@echo $(THIS)
-#	@echo $(LIBDIR)
-#	@echo $(LIBS)
-#	@echo $(MAKELIB)
-#	@echo $(INCLUDE)
-#	@echo $(PHASTDIR)
+	@echo "C_FLAGS  : "$(C_FLAGS)
+	@echo "FLAGS    : "$(FLAGS)
+	@echo "THIS     : "$(THIS)
+	@echo "LIBDIR   : "$(LIBDIR)
+	@echo "LIBS     : "$(LIBS)
+	@echo "MAKELIB  : "$(MAKELIB)
+	@echo "INCLUDE  : "$(INCLUDE)
+	@echo "PHASTDIR : "$(PHASTDIR)
 
 -include Depend.mk
 
