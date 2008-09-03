@@ -1,3 +1,4 @@
+import os
 import sys,re,optparse
 try:
     from colors import *
@@ -93,7 +94,7 @@ def decode_mDST_name(name):
         num = int(num)
     return int(r.group('run')),r.group('cdr'),int(r.group('slot')),int(r.group('phast')),num
 
-def get_period_files(period,dir_name='mDST',print_files=False):
+def get_period_files_cern(period,dir_name='mDST',print_files=False):
     from CS.castor import castor_files
         
     compass_data = '/castor/cern.ch/compass/data/'
@@ -101,7 +102,6 @@ def get_period_files(period,dir_name='mDST',print_files=False):
 
     files=[]
     for f in castor_files(d):
-        import os
         name = os.path.split(f)[1]
         try:
             run,cdr,slot,phast,n = decode_mDST_name(name)
@@ -116,6 +116,51 @@ def get_period_files(period,dir_name='mDST',print_files=False):
             print f
     
     return files
+
+def get_period_files_gridka(period,print_files=False):
+    files = []
+    for d in gridka_get_period_dirs():
+        if year(d)!=period.year():  continue
+        dname = d + '/' + period.name()
+        if not os.access(dname,os.F_OK):  continue
+        dname2 = dname + '/mDST'
+        if os.access(dname2,os.F_OK):
+            dname = dname2
+        for f in os.listdir(dname):
+            try:
+                run,cdr,slot,phast,n = decode_mDST_name(f)
+            except:
+                print 'Bad name:',dname,f
+                continue
+            if slot!=period.slot():
+                #print 'wrong slot:',slot,period.slot()
+                continue
+            ff = dname + '/' + f
+            files.append(ff)
+
+            if print_files:
+                print ff
+    
+    return files
+
+def gridka_get_period_dirs():
+    data_periods = []
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2002')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2002/oracle_dst')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2003')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2003/oracle_dst')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2004/oracle_dst')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2006/oracle_dst')
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2006/oracle_dst')
+    return data_periods
+
+def year(path):
+    import re
+    r = re.match('.*/(?P<year>\d\d\d\d)(/|$)',path)
+    if not r:
+        print 'Failed:', path
+    return int(r.group('year'))
 
 def main():
     parser = optparse.OptionParser(version='1.1.3')
@@ -141,6 +186,9 @@ def main():
                       help='Print mDST files on chunks')
     parser.add_option('', '--mDST-merged',dest='mDST_merged',default=False,action='store_true',
                       help='Print mDST merged files')
+    parser.add_option('', '--place',dest='place',default='cern',choices=('cern','gridka'),
+                      help='Location of files (cern,gridka,..)')
+    
 
     (options, args) = parser.parse_args()
 
@@ -194,23 +242,28 @@ def main():
             if not period.mode() in options.mode:
                 continue
 
-            dd = []
+            files = []
+            if options.place=='cern':
+                dd = []
 
-            if options.mDST_merged:
-                dd.append('mDST')
+                if options.mDST_merged:
+                    dd.append('mDST')
 
-            if options.mDST_chunks:
-                dd.append('mDST.chunks')
-            
-            for d in dd:
-                files = get_period_files(period,d,True)
-            
-                if options.verbose:
-                    print BOLD,GREEN,'There are %d files in %s for period %s' % (len(files),d,period.name()),RESET
+                if options.mDST_chunks:
+                    dd.append('mDST.chunks')
 
-                if 0==len(files):
-                    print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
-                    print 'Directory:',d
+                for d in dd:
+                    if options.place=='cern':
+                        files = get_period_files_cern(period,d,True)
+
+            elif options.place=='gridka':
+                files = get_period_files_gridka(period,True)
+                
+            if options.verbose:
+                print BOLD,GREEN,'There are %d files in %s for period %s' % (len(files),d,period.name()),RESET
+
+            if 0==len(files):
+                print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
 
     if not work:
         parser.print_help()
