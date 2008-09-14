@@ -117,15 +117,37 @@ def get_period_files_cern(period,dir_name='mDST',print_files=False):
     
     return files
 
-def get_period_files_gridka(period,print_files=False):
+def get_period_files_gridka(period,print_files=False,verbose=False):
+
+    period_dirs = {}
+    period_dirs['04W23'] = []
+    period_dirs['04W23'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W23-1')
+    period_dirs['04W23'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W23-2')
+
+    period_dirs['04W32'] = []
+    period_dirs['04W32'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W32-2')
+    period_dirs['04W32'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W32-3')
+
+    try:
+        pdirs =  period_dirs[period.full_name]
+    except:
+        pdirs = []
+        for d in gridka_get_period_dirs():
+            if year(d)!=period.year():  continue
+            dname = d + '/' + period.name()
+            if not os.access(dname,os.F_OK):  continue
+            dname2 = dname + '/mDST'
+            if os.access(dname2,os.F_OK):
+                dname = dname2
+            pdirs.append(dname)
+
+    if verbose:
+        print 'Period %s directories:' % period.full_name,pdirs
+
     files = []
-    for d in gridka_get_period_dirs():
-        if year(d)!=period.year():  continue
-        dname = d + '/' + period.name()
-        if not os.access(dname,os.F_OK):  continue
-        dname2 = dname + '/mDST'
-        if os.access(dname2,os.F_OK):
-            dname = dname2
+    for dname in pdirs:
+        if verbose:
+            print 'period %s dir:' % period.full_name,dname
         for f in os.listdir(dname):
             try:
                 run,cdr,slot,phast,n = decode_mDST_name(f)
@@ -133,7 +155,8 @@ def get_period_files_gridka(period,print_files=False):
                 print 'Bad name:',dname,f
                 continue
             if slot!=period.slot():
-                #print 'wrong slot:',slot,period.slot()
+                if verbose:
+                    print 'Wrong slot for "%s"   file_slot=%d  expected_slot=%d' % (f,slot,period.slot())
                 continue
             ff = dname + '/' + f
             files.append(ff)
@@ -257,10 +280,10 @@ def main():
                         files = get_period_files_cern(period,d,True)
 
             elif options.place=='gridka':
-                files = get_period_files_gridka(period,True)
+                files = get_period_files_gridka(period,True,options.verbose)
                 
             if options.verbose:
-                print BOLD,GREEN,'There are %d files in %s for period %s' % (len(files),d,period.name()),RESET
+                print BOLD,GREEN,'There are %d files for period %s' % (len(files),period.name()),RESET
 
             if 0==len(files):
                 print 'No files found for year %d period %s slot %d' % (period.year(),period.name(),period.slot())
