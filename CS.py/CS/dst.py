@@ -120,26 +120,61 @@ def get_period_files_cern(period,dir_name='mDST',print_files=False):
 def get_period_files_gridka(period,print_files=False,verbose=False):
 
     period_dirs = {}
+    d1 = '/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/'
     period_dirs['04W23'] = []
-    period_dirs['04W23'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W23-1')
-    period_dirs['04W23'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W23-2')
+    period_dirs['04W23'].append(d1+'W23-1')
+    period_dirs['04W23'].append(d1+'W23-2')
 
     period_dirs['04W32'] = []
-    period_dirs['04W32'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W32-2')
-    period_dirs['04W32'].append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/W32-3')
+    period_dirs['04W32'].append(d1+'W32-2')
+    period_dirs['04W32'].append(d1+'W32-3')
+
+    d2 = '/grid/fzk.de/mounts/nfs/data/compass3/data/mDST/2004/'
+    period_dirs['04W22'] = []
+    period_dirs['04W22'].append(d2+'W22-2')
+    period_dirs['04W23'] = []
+    period_dirs['04W23'].append(d2+'W23-3')
+    period_dirs['04W26'] = []
+    period_dirs['04W26'].append(d2+'W26-2')
+    period_dirs['04W27'] = []
+    period_dirs['04W27'].append(d2+'W27-2')
+    period_dirs['04W28'] = []
+    period_dirs['04W28'].append(d2+'W28-2')
+    period_dirs['04W29'] = []
+    period_dirs['04W29'].append(d2+'W29-1')
+    period_dirs['04W30'] = []
+    period_dirs['04W30'].append(d2+'W30-2')
+    period_dirs['04W31'] = []
+    period_dirs['04W31'].append(d2+'W31-2')
+    period_dirs['04W33'] = []
+    period_dirs['04W33'].append(d2+'W33-2')
+    period_dirs['04W34'] = []
+    period_dirs['04W34'].append(d2+'W34-3')
+    period_dirs['04W35'] = []
+    period_dirs['04W35'].append(d2+'W35-2')
+    period_dirs['04W36'] = []
+    period_dirs['04W36'].append(d2+'W36-2')
+    period_dirs['04W37'] = []
+    period_dirs['04W37'].append(d2+'W37-1')
+    period_dirs['04W37'].append(d2+'W37-3')
+    period_dirs['04W39'] = []
+    period_dirs['04W39'].append(d2+'W39-2')
+    period_dirs['04W40'] = []
+    period_dirs['04W40'].append(d2+'W40-3')
 
     try:
         pdirs =  period_dirs[period.full_name]
     except:
         pdirs = []
-        for d in gridka_get_period_dirs():
-            if year(d)!=period.year():  continue
-            dname = d + '/' + period.name()
-            if not os.access(dname,os.F_OK):  continue
-            dname2 = dname + '/mDST'
-            if os.access(dname2,os.F_OK):
-                dname = dname2
-            pdirs.append(dname)
+
+    for d in gridka_get_period_dirs():
+        if year(d)!=period.year():  continue
+        dname = d + '/' + period.name()
+        if not os.access(dname,os.F_OK):  continue
+        dname2 = dname + '/mDST'
+        if os.access(dname2,os.F_OK):
+            dname = dname2
+        pdirs.append(dname)
 
     if verbose:
         print 'Period %s directories:' % period.full_name,pdirs
@@ -193,8 +228,6 @@ def main():
 
     parser.description = 'Get DST producation information.'
 
-    parser.add_option('', '--test',action='store_true',dest='test',default=False,
-                      help='Run the test suite')
     parser.add_option('', '--page',dest='page',default='http://na58dst1.home.cern.ch/na58dst1/dstprod.html',
                       help='DST producation status page (%default)', type='string')
     parser.add_option('', '--verbose',dest='verbose',default=False,action='store_true',
@@ -206,9 +239,9 @@ def main():
                       help='Select Longitudinal/Transversity/Hadron data, (use L,T,H,LT,etc). Default is %default.',
                       type='string')
     parser.add_option('', '--mDST-chunks',dest='mDST_chunks',default=False,action='store_true',
-                      help='Print mDST files on chunks')
+                      help='Print mDST files on chunks (for CERN)')
     parser.add_option('', '--mDST-merged',dest='mDST_merged',default=False,action='store_true',
-                      help='Print mDST merged files')
+                      help='Print mDST merged files (for CERN)')
     parser.add_option('', '--place',dest='place',default='cern',choices=('cern','gridka'),
                       help='Location of files (cern,gridka,..)')
     
@@ -216,10 +249,6 @@ def main():
     (options, args) = parser.parse_args()
 
     work = False
-
-    if options.test==True:
-        work = True
-        return unittest.main()
 
     years=[]
     user_periods=[]
