@@ -117,64 +117,70 @@ def get_period_files_cern(period,dir_name='mDST',print_files=False):
     
     return files
 
+def period_directories(period_name,dir_name):
+
+    dd = []
+    if not os.access(dir_name,os.F_OK):
+        raise Exception('Directory "%s" does not exist' % dir_name)
+    
+    for i in range(5):
+        
+        d = dir_name+'/'+period_name
+
+        if i>0:
+            d += '-%d' % i
+        if os.access(d,os.F_OK):
+            dd.append(d)
+    
+    if not dd:
+        # No directories are found, use the dir_name directly.
+        dd.append(dir_name)
+    
+    return dd
+    
+
+
+def add_gridka_place1(lst,fmt='/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/%d/oracle_dst'):
+    for year in range(2002,2022):
+        d = fmt % year
+        if not os.access(d,os.F_OK):
+            continue
+        for p in os.listdir(d):
+            #print d,p
+            assert len(p)==3
+            pname = '%2.2d%s' % (year-2000,p)
+            if not lst.has_key(pname):
+                lst[pname] = []
+            lst[pname].append(d+'/'+p+'/mDST')
+
+def add_gridka_place2(lst,fmt='/grid/fzk.de/mounts/pnfs/compass/data/mDST/%d'):
+    for year in range(2002,2022):
+        d = fmt % year
+        if not os.access(d,os.F_OK):
+            continue
+        for p in os.listdir(d):
+            #print d,p
+            if len(p)==3:
+                continue
+            assert len(p)==5
+
+            pname = '%2.2d%s' % (year-2000,p[:3])
+            if not lst.has_key(pname):
+                lst[pname] = []
+            lst[pname].append(d+'/'+p)
+
 def get_period_files_gridka(period,print_files=False,verbose=False):
 
     period_dirs = {}
-    d1 = '/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004/'
-    period_dirs['04W23'] = []
-    period_dirs['04W23'].append(d1+'W23-1')
-    period_dirs['04W23'].append(d1+'W23-2')
 
-    period_dirs['04W32'] = []
-    period_dirs['04W32'].append(d1+'W32-2')
-    period_dirs['04W32'].append(d1+'W32-3')
-
-    d2 = '/grid/fzk.de/mounts/nfs/data/compass3/data/mDST/2004/'
-    period_dirs['04W22'] = []
-    period_dirs['04W22'].append(d2+'W22-2')
-    period_dirs['04W23'] = []
-    period_dirs['04W23'].append(d2+'W23-3')
-    period_dirs['04W26'] = []
-    period_dirs['04W26'].append(d2+'W26-2')
-    period_dirs['04W27'] = []
-    period_dirs['04W27'].append(d2+'W27-2')
-    period_dirs['04W28'] = []
-    period_dirs['04W28'].append(d2+'W28-2')
-    period_dirs['04W29'] = []
-    period_dirs['04W29'].append(d2+'W29-1')
-    period_dirs['04W30'] = []
-    period_dirs['04W30'].append(d2+'W30-2')
-    period_dirs['04W31'] = []
-    period_dirs['04W31'].append(d2+'W31-2')
-    period_dirs['04W33'] = []
-    period_dirs['04W33'].append(d2+'W33-2')
-    period_dirs['04W34'] = []
-    period_dirs['04W34'].append(d2+'W34-3')
-    period_dirs['04W35'] = []
-    period_dirs['04W35'].append(d2+'W35-2')
-    period_dirs['04W36'] = []
-    period_dirs['04W36'].append(d2+'W36-2')
-    period_dirs['04W37'] = []
-    period_dirs['04W37'].append(d2+'W37-1')
-    period_dirs['04W37'].append(d2+'W37-3')
-    period_dirs['04W39'] = []
-    period_dirs['04W39'].append(d2+'W39-2')
-    period_dirs['04W40'] = []
-    period_dirs['04W40'].append(d2+'W40-3')
+    add_gridka_place1(period_dirs)
+    add_gridka_place1(period_dirs,'/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/%d/oracle_dst')
+    add_gridka_place2(period_dirs)
 
     try:
         pdirs =  period_dirs[period.full_name]
     except:
-        pdirs = []
-
-    for d in gridka_get_period_dirs():
-        if year(d)!=period.year():  continue
-        dname = d + '/' + period.name()
-        if not os.access(dname,os.F_OK):  continue
-        dname2 = dname + '/mDST'
-        if os.access(dname2,os.F_OK):
-            dname = dname2
-        pdirs.append(dname)
+        return []
 
     if verbose:
         print 'Period %s directories:' % period.full_name,pdirs
@@ -187,7 +193,8 @@ def get_period_files_gridka(period,print_files=False,verbose=False):
             try:
                 run,cdr,slot,phast,n = decode_mDST_name(f)
             except:
-                print 'Bad name:',dname,f
+                if verbose:
+                    print 'Bad name:',dname,f
                 continue
             if slot!=period.slot():
                 if verbose:
@@ -203,14 +210,27 @@ def get_period_files_gridka(period,print_files=False,verbose=False):
 
 def gridka_get_period_dirs():
     data_periods = []
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2002')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2002/oracle_dst')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2003')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2003/oracle_dst')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2004/oracle_dst')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2006/oracle_dst')
-    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2006/oracle_dst')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2002')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2002/oracle_dst')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2003')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2003/oracle_dst')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/mDST/2004')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2004/oracle_dst')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/disk-only/data/castor_mirror/compass/data/2006/oracle_dst')
+    #data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2006/oracle_dst')
+
+    #compass ~ $ ls /grid/fzk.de/mounts/pnfs/compass/data/mDST/2002/
+    #P1C  P1C-1  P1C-2  P2A  P2A-2  P2B  P2B-1  P2B-2  P2C  P2C-1  P2D  P2D-2  P2D-3  P2E  P2E-1  P2E-2  P2F  P2F-1  P2F-2  P2G  P2G-1  P2G-2  P2H  P2H-1
+
+    #compass ~ $ ls /grid/fzk.de/mounts/pnfs/compass/data/mDST/2003
+    #P1A  P1A-1  P1B  P1B-1  P1C  P1C-1  P1D  P1D-1  P1E  P1E-1  P1E-3  P1F  P1F-1  P1G  P1G-2  P1G-3  P1H  P1H-1  P1H-3  P1I  P1I-3  P1J  P1J-2
+
+    #compass ~ $ ls /grid/fzk.de/mounts/pnfs/compass/data/mDST/2004
+    #W21-1  W22-2  W23-1  W23-3  W26-2  W27-2  W28-2  W29-1  W30-2  W31-2  W32-2  W33    W34    W35    W36    W37    W37-3  W38-2  W39-2  W40-3
+    #W22    W23    W23-2  W26    W27    W28    W29    W30    W31    W32    W32-3  W33-2  W34-3  W35-2  W36-2  W37-1  W38    W39    W40
+
+    data_periods.append('/grid/fzk.de/mounts/pnfs/compass/data/castor_mirror/compass/data/2003/oracle_dst')
+
     return data_periods
 
 def year(path):
